@@ -16,7 +16,6 @@ import (
 )
 
 type Client struct {
-	coinType      uint32
 	prefixAddress string
 	tokenSymbol   string
 	rpcClient     sdkClient.Context
@@ -35,7 +34,6 @@ func NewClient(cfg *config.Config) *Client {
 func (c *Client) Init(cfg *config.Config) {
 	c.prefixAddress = cfg.PrefixAddress
 	c.tokenSymbol = cfg.TokenSymbol
-	c.coinType = ethermintTypes.Bip44CoinType
 
 	sdkConfig := types.GetConfig()
 	sdkConfig.SetPurpose(44)
