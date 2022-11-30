@@ -46,29 +46,14 @@ func (b *Bank) Balance(addr string) (*big.Int, error) {
 }
 
 func (b *Bank) AccountRetriever(addr string) (uint64, uint64, error) {
-	if b.coinType == 60 {
-		queryClient := emvTypes.NewQueryClient(b.rpcClient)
-		cosmosAccount, err := queryClient.CosmosAccount(context.Background(), &emvTypes.QueryCosmosAccountRequest{Address: addr})
-		if err != nil {
-			return 0, 0, errors.Wrap(err, "CosmosAccount")
-		}
-
-		accNum := cosmosAccount.AccountNumber
-		accSeq := cosmosAccount.Sequence
-
-		return accNum, accSeq, nil
-
-	}
-
-	addrAcc, err := types.AccAddressFromBech32(addr)
+	queryClient := emvTypes.NewQueryClient(b.rpcClient)
+	cosmosAccount, err := queryClient.CosmosAccount(context.Background(), &emvTypes.QueryCosmosAccountRequest{Address: addr})
 	if err != nil {
-		return 0, 0, errors.Wrap(err, "AccAddressFromBech32")
+		return 0, 0, errors.Wrap(err, "CosmosAccount")
 	}
 
-	accNum, accSeq, err := b.rpcClient.AccountRetriever.GetAccountNumberSequence(b.rpcClient, addrAcc)
-	if err != nil {
-		return 0, 0, errors.Wrap(err, "GetAccountNumberSequence")
-	}
+	accNum := cosmosAccount.AccountNumber
+	accSeq := cosmosAccount.Sequence
 
 	return accNum, accSeq, nil
 }

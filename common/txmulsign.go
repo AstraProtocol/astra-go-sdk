@@ -69,24 +69,16 @@ func (t *TxMulSign) prepareSignTx(coinType uint32, pubKey cryptoTypes.PubKey) er
 		var accNum, accSeq uint64
 		var err error
 
-		if coinType == 60 {
-			hexAddress := common.BytesToAddress(pubKey.Address().Bytes())
+		hexAddress := common.BytesToAddress(pubKey.Address().Bytes())
 
-			queryClient := emvTypes.NewQueryClient(t.rpcClient)
-			cosmosAccount, err := queryClient.CosmosAccount(context.Background(), &emvTypes.QueryCosmosAccountRequest{Address: hexAddress.String()})
-			if err != nil {
-				return errors.Wrap(err, "CosmosAccount")
-			}
-
-			accNum = cosmosAccount.AccountNumber
-			accSeq = cosmosAccount.Sequence
-
-		} else {
-			accNum, accSeq, err = t.rpcClient.AccountRetriever.GetAccountNumberSequence(t.rpcClient, from)
-			if err != nil {
-				return errors.Wrap(err, "GetAccountNumberSequence")
-			}
+		queryClient := emvTypes.NewQueryClient(t.rpcClient)
+		cosmosAccount, err := queryClient.CosmosAccount(context.Background(), &emvTypes.QueryCosmosAccountRequest{Address: hexAddress.String()})
+		if err != nil {
+			return errors.Wrap(err, "CosmosAccount")
 		}
+
+		accNum = cosmosAccount.AccountNumber
+		accSeq = cosmosAccount.Sequence
 
 		t.txf = t.txf.WithAccountNumber(accNum)
 		t.txf = t.txf.WithSequence(accSeq)
