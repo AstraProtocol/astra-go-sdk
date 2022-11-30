@@ -78,11 +78,11 @@ func (c *Client) Init(cfg *config.Config) {
 }
 
 func (c *Client) NewAccountClient() *account.Account {
-	return account.NewAccount(c.coinType)
+	return account.NewAccount()
 }
 
 func (c *Client) NewBankClient() *bank.Bank {
-	return bank.NewBank(c.rpcClient, c.tokenSymbol, c.coinType)
+	return bank.NewBank(c.rpcClient, c.tokenSymbol)
 }
 
 func (c *Client) NewScanner(bank *bank.Bank) *scan.Scanner {

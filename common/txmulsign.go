@@ -57,7 +57,7 @@ func (t *TxMulSign) PrintUnsignedTx(msgs types.Msg) (string, error) {
 	return string(json), nil
 }
 
-func (t *TxMulSign) prepareSignTx(coinType uint32, pubKey cryptoTypes.PubKey) error {
+func (t *TxMulSign) prepareSignTx(pubKey cryptoTypes.PubKey) error {
 	from := types.AccAddress(pubKey.Address())
 
 	if err := t.rpcClient.AccountRetriever.EnsureExists(t.rpcClient, from); err != nil {
@@ -93,7 +93,7 @@ func (t *TxMulSign) SignTxWithSignerAddress(txBuilder client.TxBuilder, multiSig
 		return fmt.Errorf("address signer %s invalid", accMultiSignAddr.String())
 	}
 
-	err := t.prepareSignTx(t.signerPrivateKey.CoinType(), multiSignAccPubKey)
+	err := t.prepareSignTx(multiSignAccPubKey)
 	if err != nil {
 		return errors.Wrap(err, "prepareSignTx")
 	}
@@ -140,8 +140,8 @@ func (t *TxMulSign) SignTxWithSignerAddress(txBuilder client.TxBuilder, multiSig
 	return nil
 }
 
-func (t *TxMulSign) CreateTxMulSign(txBuilder client.TxBuilder, multiSignAccPubKey cryptoTypes.PubKey, coinType uint32, signOfSigner [][]signing.SignatureV2) error {
-	err := t.prepareSignTx(coinType, multiSignAccPubKey)
+func (t *TxMulSign) CreateTxMulSign(txBuilder client.TxBuilder, multiSignAccPubKey cryptoTypes.PubKey, signOfSigner [][]signing.SignatureV2) error {
+	err := t.prepareSignTx(multiSignAccPubKey)
 	if err != nil {
 		return errors.Wrap(err, "prepareSignTx")
 	}

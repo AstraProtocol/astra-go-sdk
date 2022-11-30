@@ -10,7 +10,6 @@ func main() {
     cfg := &config.Config{
        	ChainId:       "chain-id",
 		Endpoint:      "http://localhost:26657",
-        CoinType:      60,
         PrefixAddress: "astra",
         TokenSymbol:   "aastra",
     }
