@@ -165,7 +165,7 @@ func (b *Scanner) getBlock(height *int64) (*ctypes.ResultBlock, *ctypes.ResultBl
 		return nil, nil, err
 	}
 
-	fmt.Println(res.Block.Hash().String())
+	//fmt.Println(res.Block.Hash().String())
 
 	/*res1, err := node.BlockResults(context.Background(), height)
 	if err != nil {
