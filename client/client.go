@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"github.com/AstraProtocol/astra-go-sdk/account"
 	"github.com/AstraProtocol/astra-go-sdk/bank"
+	"github.com/AstraProtocol/astra-go-sdk/channel"
 	"github.com/AstraProtocol/astra-go-sdk/config"
 	"github.com/AstraProtocol/astra-go-sdk/scan"
+	"github.com/AstraProtocol/astra/v2/app"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/types"
 	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/evmos/ethermint/encoding"
 	ethermintTypes "github.com/evmos/ethermint/types"
-	"github.com/evmos/evmos/v6/app"
 )
 
 type Client struct {
@@ -85,4 +86,8 @@ func (c *Client) NewBankClient() *bank.Bank {
 
 func (c *Client) NewScanner(bank *bank.Bank) *scan.Scanner {
 	return scan.NewScanner(c.rpcClient, bank)
+}
+
+func (c *Client) NewChannelClient() *channel.Channel {
+	return channel.NewChannel(c.rpcClient)
 }

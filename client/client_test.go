@@ -3,9 +3,18 @@ package client
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"math"
+	"math/big"
+	"os"
+	"sync"
+	"testing"
+
 	"github.com/AstraProtocol/astra-go-sdk/bank"
+	"github.com/AstraProtocol/astra-go-sdk/channel"
 	"github.com/AstraProtocol/astra-go-sdk/common"
 	"github.com/AstraProtocol/astra-go-sdk/config"
+	channelTypes "github.com/AstraProtocol/channel/x/channel/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/types"
 	signingTypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
@@ -13,12 +22,6 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"log"
-	"math"
-	"math/big"
-	"os"
-	"sync"
-	"testing"
 )
 
 type AstraSdkTestSuite struct {
@@ -55,6 +58,15 @@ func (suite *AstraSdkTestSuite) TestInitBank() {
 	}
 
 	fmt.Println(balance.String())
+}
+
+func (suite *AstraSdkTestSuite) TestInitChannel() {
+	channelClient := suite.Client.NewChannelClient()
+	channels, err := channelClient.ListChannel()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(channels)
 }
 
 func (suite *AstraSdkTestSuite) TestGenAccount() {
@@ -472,4 +484,146 @@ func (suite *AstraSdkTestSuite) TestConvertToDecimal() {
 	amount, err := common.ConvertToDecimal("740000000000", 18)
 	fmt.Println(err)
 	fmt.Println(amount)
+}
+
+func (suite *AstraSdkTestSuite) TestOpenChannel() {
+	channelClient := suite.Client.NewChannelClient()
+	acc := suite.Client.NewAccountClient()
+	account1, err := acc.ImportAccount("gadget final blue appear hero retire wild account message social health hobby decade neglect common egg cruel certain phrase myself alert enlist brother sure")
+	if err != nil {
+		panic(err)
+	}
+	account2, err := acc.ImportAccount("salute debate real reject wreck topple derive night height job range enrich juice develop crush install method always vacant napkin blush beyond hedgehog tortoise")
+	if err != nil {
+		panic(err)
+	}
+
+	bankClient := suite.Client.NewBankClient()
+	balance1Origin, err := bankClient.Balance(account1.AccAddress().String())
+	balance2Origin, err := bankClient.Balance(account2.AccAddress().String())
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Balance 1 - origin: ", balance1Origin)
+
+	multisigAddr, multiSigPubkey, err := acc.CreateMulSignAccountFromTwoAccount(account1.PublicKey(), account2.PublicKey(), 2)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("multisigAddr", multisigAddr)
+	fmt.Println("Deposit init multisignAddr")
+	amount := big.NewInt(1)
+
+	fmt.Println("deposit amount", amount.String())
+	request1 := &bank.TransferRequest{
+		PrivateKey: "gadget final blue appear hero retire wild account message social health hobby decade neglect common egg cruel certain phrase myself alert enlist brother sure",
+		Receiver:   multisigAddr,
+		Amount:     amount,
+		GasLimit:   200000,
+		GasPrice:   "0.001aastra",
+	}
+
+	txResult1, err := bankClient.TransferRawDataAndBroadcast(request1)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("tx transfer result code", txResult1.Code)
+
+	openChannelRequest := channel.SignMsgRequest{
+		Msg: &channelTypes.MsgOpenChannel{
+			Creator: multisigAddr,
+			PartA:   account1.AccAddress().String(),
+			PartB:   account2.AccAddress().String(),
+			CoinA: &types.Coin{
+				Denom:  "astra",
+				Amount: types.NewInt(1),
+			},
+			CoinB: &types.Coin{
+				Denom:  "astra",
+				Amount: types.NewInt(1),
+			},
+			MultisigAddr: multisigAddr,
+			Sequence:     "8",
+		},
+		GasLimit: 200000,
+		GasPrice: "0.001aastra",
+	}
+
+	signList := make([][]signingTypes.SignatureV2, 0)
+	strSig1, err := channelClient.SignMultisigMsg(openChannelRequest, account1, multiSigPubkey)
+	if err != nil {
+		panic(err)
+	}
+	signByte1, err := common.TxBuilderSignatureJsonDecoder(suite.Client.rpcClient.TxConfig, strSig1)
+	if err != nil {
+		panic(err)
+	}
+
+	signList = append(signList, signByte1)
+
+	strSig2, err := channelClient.SignMultisigMsg(openChannelRequest, account2, multiSigPubkey)
+	if err != nil {
+		panic(err)
+	}
+	signByte2, err := common.TxBuilderSignatureJsonDecoder(suite.Client.rpcClient.TxConfig, strSig2)
+	if err != nil {
+		panic(err)
+	}
+
+	signList = append(signList, signByte2)
+
+	fmt.Println("new tx multisign")
+
+	newTx := common.NewTxMulSign(suite.Client.rpcClient,
+		nil,
+		openChannelRequest.GasLimit,
+		openChannelRequest.GasPrice,
+		0,
+		2)
+
+	txBuilderMultiSign, err := newTx.BuildUnsignedTx(openChannelRequest.Msg)
+	if err != nil {
+		panic(err)
+	}
+
+	err = newTx.CreateTxMulSign(txBuilderMultiSign, multiSigPubkey, suite.Client.coinType, signList)
+	if err != nil {
+		panic(err)
+	}
+
+	txJson, err := common.TxBuilderJsonEncoder(suite.Client.rpcClient.TxConfig, txBuilderMultiSign)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("rawData", string(txJson))
+
+	txByte, err := common.TxBuilderJsonDecoder(suite.Client.rpcClient.TxConfig, txJson)
+	if err != nil {
+		panic(err)
+	}
+
+	txHash := common.TxHash(txByte)
+	fmt.Println("txHash", txHash)
+
+	fmt.Println(ethCommon.BytesToHash(txByte).String())
+
+	txResult2, err := suite.Client.rpcClient.BroadcastTxCommit(txByte)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("tx openchannel result code", txResult2.Code)
+
+	balance1After, err := bankClient.Balance(account1.AccAddress().String())
+	balance2After, err := bankClient.Balance(account2.AccAddress().String())
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("balance 1 - after", balance1After)
+	fmt.Println("balance 2 - after", balance1After)
+
+	diff := balance1Origin.Sub(balance1Origin, balance1After)
+	diff2 := balance1Origin.Sub(balance2Origin, balance2After)
+	fmt.Println("Account1 Balance decrease", diff)
+	fmt.Println("Account2 Balance decrease", diff2)
 }

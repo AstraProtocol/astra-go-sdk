@@ -7,8 +7,10 @@ import (
 	"github.com/AstraProtocol/astra-go-sdk/common"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	ethCommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	emvTypes "github.com/evmos/ethermint/x/evm/types"
 	"github.com/pkg/errors"
@@ -106,6 +108,57 @@ func (b *Bank) TransferRawData(param *TransferRequest) (client.TxBuilder, error)
 	}
 
 	return txBuilder, nil
+}
+
+func (b *Bank) TransferRawDataAndBroadcast(param *TransferRequest) (*sdk.TxResponse, error) {
+	auth := account.NewAccount(b.coinType)
+	acc, err := auth.ImportAccount(param.PrivateKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "ImportAccount")
+	}
+
+	receiver, err := types.AccAddressFromBech32(param.Receiver)
+	if err != nil {
+		return nil, errors.Wrap(err, "AccAddressFromBech32")
+	}
+
+	coin := types.NewCoin(b.tokenSymbol, types.NewIntFromBigInt(param.Amount))
+	msg := bankTypes.NewMsgSend(
+		acc.AccAddress(),
+		receiver,
+		types.NewCoins(coin),
+	)
+
+	newTx := common.NewTx(b.rpcClient, acc, param.GasLimit, param.GasPrice)
+
+	txBuilder, err := newTx.BuildUnsignedTx(msg)
+	if err != nil {
+		return nil, errors.Wrap(err, "BuildUnsignedTx")
+	}
+
+	err = newTx.SignTx(txBuilder)
+	if err != nil {
+		return nil, errors.Wrap(err, "SignTx")
+	}
+
+	txJson, err := common.TxBuilderJsonEncoder(b.rpcClient.TxConfig, txBuilder)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("rawData", string(txJson))
+
+	txByte, err := common.TxBuilderJsonDecoder(b.rpcClient.TxConfig, txJson)
+	if err != nil {
+		panic(err)
+	}
+
+	txHash := common.TxHash(txByte)
+	fmt.Println("txHash", txHash)
+
+	fmt.Println(ethCommon.BytesToHash(txByte).String())
+
+	return b.rpcClient.BroadcastTxCommit(txByte)
 }
 
 func (b *Bank) TransferRawDataWithPrivateKey(param *TransferRequest) (client.TxBuilder, error) {

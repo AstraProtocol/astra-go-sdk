@@ -45,6 +45,16 @@ func (a *Account) CreateAccount() (*PrivateKeySerialized, error) {
 	return privKey, nil
 }
 
+func (a *Account) CreateMulSignAccountFromTwoAccount(account1, account2 cryptoTypes.PubKey,
+	threshold int) (string, cryptoTypes.PubKey, error) {
+	pks := make([]cryptoTypes.PubKey, 2)
+	pks[0] = account1
+	pks[1] = account2
+	pk := multisig.NewLegacyAminoPubKey(threshold, pks)
+	addr := types.AccAddress(pk.Address())
+	return addr.String(), pk, nil
+}
+
 func (a *Account) CreateMulSignAccount(totalSign, multisigThreshold int) ([]*PrivateKeySerialized, string, string, error) {
 	var listPrivate []*PrivateKeySerialized
 	pks := make([]cryptoTypes.PubKey, totalSign)
