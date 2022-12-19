@@ -52,7 +52,6 @@ func (t *Tx) PrintUnsignedTx(msg types.Msg) (string, error) {
 }
 
 func (t *Tx) prepareSignTx() error {
-	coinType := t.privateKey.CoinType()
 	from := t.privateKey.AccAddress()
 
 	if err := t.rpcClient.AccountRetriever.EnsureExists(t.rpcClient, from); err != nil {
@@ -64,24 +63,16 @@ func (t *Tx) prepareSignTx() error {
 		var accNum, accSeq uint64
 		var err error
 
-		if coinType == 60 {
-			hexAddress := common.BytesToAddress(t.privateKey.PublicKey().Address().Bytes())
+		hexAddress := common.BytesToAddress(t.privateKey.PublicKey().Address().Bytes())
 
-			queryClient := emvTypes.NewQueryClient(t.rpcClient)
-			cosmosAccount, err := queryClient.CosmosAccount(context.Background(), &emvTypes.QueryCosmosAccountRequest{Address: hexAddress.String()})
-			if err != nil {
-				return errors.Wrap(err, "CosmosAccount")
-			}
-
-			accNum = cosmosAccount.AccountNumber
-			accSeq = cosmosAccount.Sequence
-
-		} else {
-			accNum, accSeq, err = t.rpcClient.AccountRetriever.GetAccountNumberSequence(t.rpcClient, from)
-			if err != nil {
-				return errors.Wrap(err, "GetAccountNumberSequence")
-			}
+		queryClient := emvTypes.NewQueryClient(t.rpcClient)
+		cosmosAccount, err := queryClient.CosmosAccount(context.Background(), &emvTypes.QueryCosmosAccountRequest{Address: hexAddress.String()})
+		if err != nil {
+			return errors.Wrap(err, "CosmosAccount")
 		}
+
+		accNum = cosmosAccount.AccountNumber
+		accSeq = cosmosAccount.Sequence
 
 		t.txf = t.txf.WithAccountNumber(accNum)
 		t.txf = t.txf.WithSequence(accSeq)

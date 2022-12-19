@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
-	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 	cryptoTypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -17,11 +16,10 @@ import (
 )
 
 type Account struct {
-	coinType uint32
 }
 
-func NewAccount(coinType uint32) *Account {
-	return &Account{coinType: coinType}
+func NewAccount() *Account {
+	return &Account{}
 }
 
 //Create new an Account
@@ -76,32 +74,16 @@ func (a *Account) CreateMulSignAccount(totalSign, multisigThreshold int) ([]*Pri
 //Import an Account
 
 func (a *Account) ImportAccount(mnemonic string) (*PrivateKeySerialized, error) {
-	if a.coinType == 60 {
-		derivedPriv, err := ethermintHd.EthSecp256k1.Derive()(
-			mnemonic,
-			keyring.DefaultBIP39Passphrase,
-			ethermintTypes.BIP44HDPath)
-
-		if err != nil {
-			return nil, errors.Wrap(err, "Derive")
-		}
-
-		privateKey := ethermintHd.EthSecp256k1.Generate()(derivedPriv)
-		return NewPrivateKeySerialized(mnemonic, privateKey), nil
-	}
-
-	//cosmos
-	derivedPriv, err := hd.Secp256k1.Derive()(
+	derivedPriv, err := ethermintHd.EthSecp256k1.Derive()(
 		mnemonic,
 		keyring.DefaultBIP39Passphrase,
-		types.FullFundraiserPath,
-	)
+		ethermintTypes.BIP44HDPath)
 
 	if err != nil {
 		return nil, errors.Wrap(err, "Derive")
 	}
 
-	privateKey := hd.Secp256k1.Generate()(derivedPriv)
+	privateKey := ethermintHd.EthSecp256k1.Generate()(derivedPriv)
 	return NewPrivateKeySerialized(mnemonic, privateKey), nil
 }
 
@@ -111,14 +93,11 @@ func (a *Account) ImportPrivateKey(privateKeyStr string) (*PrivateKeySerialized,
 		return nil, err
 	}
 
-	if a.coinType == 60 {
-		privateKey := &ethsecp256k1.PrivKey{
-			Key: priv,
-		}
-		return NewPrivateKeySerialized("", privateKey), nil
+	privateKey := &ethsecp256k1.PrivKey{
+		Key: priv,
 	}
 
-	return nil, nil
+	return NewPrivateKeySerialized("", privateKey), nil
 }
 
 func (a *Account) ImportHdPath(mnemonic, hdPath string) (*PrivateKeySerialized, error) {
@@ -129,9 +108,6 @@ func (a *Account) ImportHdPath(mnemonic, hdPath string) (*PrivateKeySerialized, 
 
 	privateKey := ethermintHd.EthSecp256k1.Generate()(bz)
 
-	if a.coinType == 60 {
-		return NewPrivateKeySerialized("", privateKey), nil
-	}
+	return NewPrivateKeySerialized("", privateKey), nil
 
-	return nil, nil
 }

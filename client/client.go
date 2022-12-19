@@ -16,7 +16,6 @@ import (
 )
 
 type Client struct {
-	coinType      uint32
 	prefixAddress string
 	tokenSymbol   string
 	rpcClient     sdkClient.Context
@@ -33,21 +32,12 @@ func NewClient(cfg *config.Config) *Client {
 }
 
 func (c *Client) Init(cfg *config.Config) {
-	c.coinType = cfg.CoinType
 	c.prefixAddress = cfg.PrefixAddress
 	c.tokenSymbol = cfg.TokenSymbol
 
 	sdkConfig := types.GetConfig()
 	sdkConfig.SetPurpose(44)
-
-	switch cfg.CoinType {
-	case 60:
-		sdkConfig.SetCoinType(ethermintTypes.Bip44CoinType)
-	case 118:
-		sdkConfig.SetCoinType(types.CoinType)
-	default:
-		panic("Coin type invalid!")
-	}
+	sdkConfig.SetCoinType(ethermintTypes.Bip44CoinType)
 
 	bech32PrefixAccAddr := fmt.Sprintf("%v", c.prefixAddress)
 	bech32PrefixAccPub := fmt.Sprintf("%vpub", c.prefixAddress)
@@ -86,11 +76,11 @@ func (c *Client) Init(cfg *config.Config) {
 }
 
 func (c *Client) NewAccountClient() *account.Account {
-	return account.NewAccount(c.coinType)
+	return account.NewAccount()
 }
 
 func (c *Client) NewBankClient() *bank.Bank {
-	return bank.NewBank(c.rpcClient, c.tokenSymbol, c.coinType)
+	return bank.NewBank(c.rpcClient, c.tokenSymbol)
 }
 
 func (c *Client) NewScanner(bank *bank.Bank) *scan.Scanner {
