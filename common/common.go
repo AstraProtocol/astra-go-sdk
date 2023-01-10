@@ -2,11 +2,13 @@ package common
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 	cryptoTypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/tx"
 	signingTypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/ethereum/go-ethereum/accounts"
 	ethCommon "github.com/ethereum/go-ethereum/common"
@@ -157,4 +159,17 @@ func ConvertToDecimal(amount string, decimal int) (float64, error) {
 	}
 
 	return convert, nil
+}
+
+func Simulate(client client.Context, txByte []byte) (uint64, error) {
+	txSvcClient := tx.NewServiceClient(client)
+	simRes, err := txSvcClient.Simulate(context.Background(), &tx.SimulateRequest{
+		TxBytes: txByte,
+	})
+
+	if err != nil {
+		return 0, err
+	}
+
+	return simRes.GasInfo.GasUsed, err
 }

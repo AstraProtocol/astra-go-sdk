@@ -49,7 +49,7 @@ func TestAstraSdkTestSuite(t *testing.T) {
 
 func (suite *AstraSdkTestSuite) TestInitBank() {
 	bankClient := suite.Client.NewBankClient()
-	balance, err := bankClient.Balance("astra1hlue55l54erxk3asqzvkfsm5yl0du50twljtlp")
+	balance, err := bankClient.Balance("astra1p6sscujfpygmrrxqlwqeqqw6r5lxk2x9gz9glh")
 	if err != nil {
 		panic(err)
 	}
@@ -93,13 +93,18 @@ func (suite *AstraSdkTestSuite) TestTransfer() {
 
 	request := &bank.TransferRequest{
 		PrivateKey: "valve season sauce knife burden benefit zone field ask carpet fury vital action donate trade street ability artwork ball uniform garbage sugar warm differ",
-		Receiver:   "astra1p6sscujfpygmrrxqlwqeqqw6r5lxk2x9gz9glh",
+		Receiver:   "astra18dgn6vxsyk69xglsp8z0r6ltc5q2slzc2nglwd",
 		Amount:     amount,
 		GasLimit:   200000,
 		GasPrice:   "0.001aastra",
 	}
 
-	txBuilder, err := bankClient.TransferRawData(request)
+	/*	txBuilder, err := bankClient.TransferRawData(request)
+		if err != nil {
+			panic(err)
+		}*/
+
+	txBuilder, err := bankClient.TransferRawDataAndEstimateGas(request)
 	if err != nil {
 		panic(err)
 	}
@@ -109,7 +114,7 @@ func (suite *AstraSdkTestSuite) TestTransfer() {
 		panic(err)
 	}
 
-	fmt.Println("rawData", string(txJson))
+	fmt.Println("rawData", txJson)
 
 	txByte, err := common.TxBuilderJsonDecoder(suite.Client.rpcClient.TxConfig, txJson)
 	if err != nil {
@@ -401,7 +406,10 @@ func (suite *AstraSdkTestSuite) TestImportAccountViaHdPath() {
 
 func (suite *AstraSdkTestSuite) TestImportByNmemonic() {
 	accClient := suite.Client.NewAccountClient()
-	key, err := accClient.ImportAccount("effort behave trash gaze youth food north brain poverty drive armed split kind script fox frog breeze cliff bright raise napkin question payment upset")
+	nmemonic := ""
+
+	key, err := accClient.ImportAccount(nmemonic)
+
 	if err != nil {
 		panic(err)
 	}
@@ -435,7 +443,7 @@ func (suite *AstraSdkTestSuite) TestScanner() {
 
 func (suite *AstraSdkTestSuite) TestGetTxDetail() {
 	bankClient := suite.Client.NewBankClient()
-	rs, err := bankClient.TxDetail("2A01E4B7FC44FE90387241AA6A067D420838940CA4B3605E5CB4AB39BFDD0320")
+	rs, err := bankClient.TxDetail("BBB520F3A2D1FC48520C2FFF61A89848C4D36E2EB0588B3C90FC485D3B7AEA90")
 
 	if err != nil {
 		panic(err)

@@ -7,6 +7,7 @@ import (
 	"github.com/AstraProtocol/astra-go-sdk/common"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/tx"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -108,6 +109,33 @@ func (b *Bank) TransferRawData(param *TransferRequest) (client.TxBuilder, error)
 	return txBuilder, nil
 }
 
+func (b *Bank) TransferRawDataAndEstimateGas(param *TransferRequest) (client.TxBuilder, error) {
+	txBuilder, err := b.TransferRawData(param)
+	if err != nil {
+		return nil, err
+	}
+
+	txBytes, err := b.rpcClient.TxConfig.TxEncoder()(txBuilder.GetTx())
+	if err != nil {
+		return nil, err
+	}
+
+	txSvcClient := tx.NewServiceClient(b.rpcClient)
+	simRes, err := txSvcClient.Simulate(context.Background(), &tx.SimulateRequest{
+		TxBytes: txBytes,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if simRes.GasInfo.GasUsed > 0 {
+		param.GasLimit = simRes.GasInfo.GasUsed
+	}
+
+	return b.TransferRawData(param)
+}
+
 func (b *Bank) TransferRawDataWithPrivateKey(param *TransferRequest) (client.TxBuilder, error) {
 	auth := account.NewAccount()
 	acc, err := auth.ImportPrivateKey(param.PrivateKey)
@@ -140,6 +168,33 @@ func (b *Bank) TransferRawDataWithPrivateKey(param *TransferRequest) (client.TxB
 	}
 
 	return txBuilder, nil
+}
+
+func (b *Bank) TransferRawDataWithPrivateKeyAndEstimateGas(param *TransferRequest) (client.TxBuilder, error) {
+	txBuilder, err := b.TransferRawDataWithPrivateKey(param)
+	if err != nil {
+		return nil, err
+	}
+
+	txBytes, err := b.rpcClient.TxConfig.TxEncoder()(txBuilder.GetTx())
+	if err != nil {
+		return nil, err
+	}
+
+	txSvcClient := tx.NewServiceClient(b.rpcClient)
+	simRes, err := txSvcClient.Simulate(context.Background(), &tx.SimulateRequest{
+		TxBytes: txBytes,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if simRes.GasInfo.GasUsed > 0 {
+		param.GasLimit = simRes.GasInfo.GasUsed
+	}
+
+	return b.TransferRawDataWithPrivateKey(param)
 }
 
 func (b *Bank) SignTxWithSignerAddress(param *SignTxWithSignerAddressRequest) (client.TxBuilder, error) {
@@ -211,6 +266,33 @@ func (b *Bank) TransferMultiSignRawData(param *TransferMultiSignRequest) (client
 	}
 
 	return txBuilder, nil
+}
+
+func (b *Bank) TransferMultiSignRawDataAndEstimateGas(param *TransferMultiSignRequest) (client.TxBuilder, error) {
+	txBuilder, err := b.TransferMultiSignRawData(param)
+	if err != nil {
+		return nil, err
+	}
+
+	txBytes, err := b.rpcClient.TxConfig.TxEncoder()(txBuilder.GetTx())
+	if err != nil {
+		return nil, err
+	}
+
+	txSvcClient := tx.NewServiceClient(b.rpcClient)
+	simRes, err := txSvcClient.Simulate(context.Background(), &tx.SimulateRequest{
+		TxBytes: txBytes,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if simRes.GasInfo.GasUsed > 0 {
+		param.GasLimit = simRes.GasInfo.GasUsed
+	}
+
+	return b.TransferMultiSignRawData(param)
 }
 
 func (b *Bank) ParserEthMsg(txs *Txs, msgEth *emvTypes.MsgEthereumTx) error {
