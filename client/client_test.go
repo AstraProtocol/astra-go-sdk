@@ -6,7 +6,6 @@ import (
 	"github.com/AstraProtocol/astra-go-sdk/bank"
 	"github.com/AstraProtocol/astra-go-sdk/common"
 	"github.com/AstraProtocol/astra-go-sdk/config"
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/types"
 	signingTypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	ethCommon "github.com/ethereum/go-ethereum/common"
@@ -17,7 +16,6 @@ import (
 	"math"
 	"math/big"
 	"os"
-	"sync"
 	"testing"
 )
 
@@ -218,7 +216,7 @@ func (suite *AstraSdkTestSuite) TestTransferMultiSign() {
 		}
 	*/
 
-	pk, err := common.DecodePublicKey(
+	masterPk, err := common.DecodePublicKey(
 		suite.Client.rpcClient,
 		"{\"@type\":\"/cosmos.crypto.multisig.LegacyAminoPubKey\",\"threshold\":2,\"public_keys\":[{\"@type\":\"/ethermint.crypto.v1.ethsecp256k1.PubKey\",\"key\":\"A0ATAOfWQM6XXCA5po9DBsKVGmWudnIN55arHhDYhR89\"},{\"@type\":\"/ethermint.crypto.v1.ethsecp256k1.PubKey\",\"key\":\"A0ks8ww7AVKYQRsKgZSQi9wTfoQzKNt30gLOMpOJNSPn\"},{\"@type\":\"/ethermint.crypto.v1.ethsecp256k1.PubKey\",\"key\":\"A9Q4nSS73SG+Tclghh1JEtfng5vd41dgmG7HJrYW4/Ml\"}]}",
 	)
@@ -226,7 +224,7 @@ func (suite *AstraSdkTestSuite) TestTransferMultiSign() {
 		panic(err)
 	}
 
-	from := types.AccAddress(pk.Address())
+	from := types.AccAddress(masterPk.Address())
 	fmt.Println("from", from.String())
 
 	bankClient := suite.Client.NewBankClient()
@@ -236,104 +234,78 @@ func (suite *AstraSdkTestSuite) TestTransferMultiSign() {
 		"seven mean snap illness couch excite item topic tobacco erosion tourist blue van possible wolf gadget combine excess brush goddess glory subway few mind",
 	}
 
-	thread := 2
-	listRawdata := make([][]byte, 0)
+	amount := big.NewInt(0).Mul(big.NewInt(2), big.NewInt(0).SetUint64(uint64(math.Pow10(18))))
+	fmt.Println("amount", amount.String())
 
-	for i := 0; i < thread; i++ {
-		amount := big.NewInt(0).Mul(big.NewInt(10+int64(i)), big.NewInt(0).SetUint64(uint64(math.Pow10(18))))
-		fmt.Println("amount", amount.String())
-
-		fmt.Println("start signer")
-		signList := make([][]signingTypes.SignatureV2, 0)
-		for i, s := range listPrivate {
-			fmt.Println("index", i)
-			request := &bank.SignTxWithSignerAddressRequest{
-				SignerPrivateKey: s,
-				SignerPublicKey:  pk,
-				Receiver:         "astra156dh69y8j39eynue4jahrezg32rgl8eck5rhsl",
-				Amount:           amount,
-				GasLimit:         200000,
-				GasPrice:         "0.001aastra",
-			}
-
-			txBuilder, err := bankClient.SignTxWithSignerAddress(request)
-			if err != nil {
-				panic(err)
-			}
-
-			sign, err := common.TxBuilderSignatureJsonEncoder(suite.Client.rpcClient.TxConfig, txBuilder)
-			if err != nil {
-				panic(err)
-			}
-
-			fmt.Println("sign-data", string(sign))
-
-			signByte, err := common.TxBuilderSignatureJsonDecoder(suite.Client.rpcClient.TxConfig, sign)
-			if err != nil {
-				panic(err)
-			}
-
-			signList = append(signList, signByte)
-		}
-
-		fmt.Println("start transfer")
-		//200
-		request := &bank.TransferMultiSignRequest{
-			MulSignAccPublicKey: pk,
+	fmt.Println("start signer")
+	signList := make([][]signingTypes.SignatureV2, 0)
+	for i, s := range listPrivate {
+		fmt.Println("index", i)
+		request := &bank.SignTxWithSignerAddressRequest{
+			SignerPrivateKey:    s,
+			MulSignAccPublicKey: masterPk,
 			Receiver:            "astra156dh69y8j39eynue4jahrezg32rgl8eck5rhsl",
 			Amount:              amount,
 			GasLimit:            200000,
 			GasPrice:            "0.001aastra",
-			Sigs:                signList,
 		}
 
-		txBuilder, err := bankClient.TransferMultiSignRawData(request)
+		txBuilder, err := bankClient.SignTxWithSignerAddress(request)
 		if err != nil {
 			panic(err)
 		}
 
-		txJson, err := common.TxBuilderJsonEncoder(suite.Client.rpcClient.TxConfig, txBuilder)
+		sign, err := common.TxBuilderSignatureJsonEncoder(suite.Client.rpcClient.TxConfig, txBuilder)
 		if err != nil {
 			panic(err)
 		}
 
-		fmt.Println("rawData", string(txJson))
+		fmt.Println("sign-data", string(sign))
 
-		txByte, err := common.TxBuilderJsonDecoder(suite.Client.rpcClient.TxConfig, txJson)
+		signByte, err := common.TxBuilderSignatureJsonDecoder(suite.Client.rpcClient.TxConfig, sign)
 		if err != nil {
 			panic(err)
 		}
 
-		txHash := common.TxHash(txByte)
-		fmt.Println("txHash", txHash)
-
-		listRawdata = append(listRawdata, txByte)
+		signList = append(signList, signByte)
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(thread)
+	fmt.Println("start transfer")
+	//200
+	request := &bank.TransferMultiSignRequest{
+		MulSignAccPublicKey: masterPk,
+		Receiver:            "astra156dh69y8j39eynue4jahrezg32rgl8eck5rhsl",
+		Amount:              amount,
+		GasLimit:            200000,
+		GasPrice:            "0.001aastra",
+		Sigs:                signList,
+	}
 
-	go func(item []byte, client client.Context) {
-		_, err := client.BroadcastTxCommit(item)
-		if err != nil {
-			panic(err)
-		}
+	txBuilder, err := bankClient.TransferMultiSignRawData(request)
+	if err != nil {
+		panic(err)
+	}
 
-		//fmt.Println("BroadcastTxCommit", res)
-		defer wg.Done()
-	}(listRawdata[0], suite.Client.rpcClient)
+	txJson, err := common.TxBuilderJsonEncoder(suite.Client.rpcClient.TxConfig, txBuilder)
+	if err != nil {
+		panic(err)
+	}
 
-	go func(item []byte, client client.Context) {
-		_, err := client.BroadcastTxCommit(item)
-		if err != nil {
-			panic(err)
-		}
+	fmt.Println("rawData", string(txJson))
 
-		//fmt.Println("BroadcastTxCommit", res)
-		defer wg.Done()
-	}(listRawdata[1], suite.Client.rpcClient)
+	txByte, err := common.TxBuilderJsonDecoder(suite.Client.rpcClient.TxConfig, txJson)
+	if err != nil {
+		panic(err)
+	}
 
-	wg.Wait()
+	txHash := common.TxHash(txByte)
+	fmt.Println("txHash", txHash)
+
+	_, err = suite.Client.rpcClient.BroadcastTxCommit(txByte)
+	if err != nil {
+		panic(err)
+	}
+
 }
 
 func (suite *AstraSdkTestSuite) TestAddressValid() {
