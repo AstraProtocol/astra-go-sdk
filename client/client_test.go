@@ -220,6 +220,7 @@ func (suite *AstraSdkTestSuite) TestTransferMultiSign() {
 		suite.Client.rpcClient,
 		"{\"@type\":\"/cosmos.crypto.multisig.LegacyAminoPubKey\",\"threshold\":2,\"public_keys\":[{\"@type\":\"/ethermint.crypto.v1.ethsecp256k1.PubKey\",\"key\":\"A0ATAOfWQM6XXCA5po9DBsKVGmWudnIN55arHhDYhR89\"},{\"@type\":\"/ethermint.crypto.v1.ethsecp256k1.PubKey\",\"key\":\"A0ks8ww7AVKYQRsKgZSQi9wTfoQzKNt30gLOMpOJNSPn\"},{\"@type\":\"/ethermint.crypto.v1.ethsecp256k1.PubKey\",\"key\":\"A9Q4nSS73SG+Tclghh1JEtfng5vd41dgmG7HJrYW4/Ml\"}]}",
 	)
+
 	if err != nil {
 		panic(err)
 	}
@@ -237,6 +238,13 @@ func (suite *AstraSdkTestSuite) TestTransferMultiSign() {
 	amount := big.NewInt(0).Mul(big.NewInt(2), big.NewInt(0).SetUint64(uint64(math.Pow10(18))))
 	fmt.Println("amount", amount.String())
 
+	gasLimit, err := bankClient.TransferMultiSignEstimateGas(listPrivate, masterPk, amount)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("gas", gasLimit)
+
 	fmt.Println("start signer")
 	signList := make([][]signingTypes.SignatureV2, 0)
 	for i, s := range listPrivate {
@@ -246,7 +254,7 @@ func (suite *AstraSdkTestSuite) TestTransferMultiSign() {
 			MulSignAccPublicKey: masterPk,
 			Receiver:            "astra156dh69y8j39eynue4jahrezg32rgl8eck5rhsl",
 			Amount:              amount,
-			GasLimit:            200000,
+			GasLimit:            gasLimit,
 			GasPrice:            "0.001aastra",
 		}
 
@@ -276,7 +284,7 @@ func (suite *AstraSdkTestSuite) TestTransferMultiSign() {
 		MulSignAccPublicKey: masterPk,
 		Receiver:            "astra156dh69y8j39eynue4jahrezg32rgl8eck5rhsl",
 		Amount:              amount,
-		GasLimit:            200000,
+		GasLimit:            gasLimit,
 		GasPrice:            "0.001aastra",
 		Sigs:                signList,
 	}

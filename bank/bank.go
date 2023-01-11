@@ -6,8 +6,10 @@ import (
 	"github.com/AstraProtocol/astra-go-sdk/account"
 	"github.com/AstraProtocol/astra-go-sdk/common"
 	"github.com/cosmos/cosmos-sdk/client"
+	cryptoTypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx"
+	signingTypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -274,6 +276,70 @@ func (b *Bank) TransferMultiSignRawData(param *TransferMultiSignRequest) (client
 	}
 
 	return txBuilder, nil
+}
+
+func (b *Bank) TransferMultiSignEstimateGas(privateKey []string, multiSign cryptoTypes.PubKey, amount *big.Int) (uint64, error) {
+	//todo: account estimate is temp account, note: do not use this account
+
+	masterPk := multiSign
+	signList := make([][]signingTypes.SignatureV2, 0)
+	for _, s := range privateKey {
+		request := &SignTxWithSignerAddressRequest{
+			SignerPrivateKey:    s,
+			MulSignAccPublicKey: masterPk,
+			Receiver:            "astra156dh69y8j39eynue4jahrezg32rgl8eck5rhsl",
+			Amount:              amount,
+			GasLimit:            200000,
+			GasPrice:            "0.001aastra",
+		}
+
+		txBuilder, err := b.SignTxWithSignerAddress(request)
+		if err != nil {
+			return 0, err
+		}
+
+		sign, err := common.TxBuilderSignatureJsonEncoder(b.rpcClient.TxConfig, txBuilder)
+		if err != nil {
+			return 0, err
+		}
+
+		signByte, err := common.TxBuilderSignatureJsonDecoder(b.rpcClient.TxConfig, sign)
+		if err != nil {
+			return 0, err
+		}
+
+		signList = append(signList, signByte)
+	}
+
+	request := &TransferMultiSignRequest{
+		MulSignAccPublicKey: masterPk,
+		Receiver:            "astra156dh69y8j39eynue4jahrezg32rgl8eck5rhsl",
+		Amount:              amount,
+		GasLimit:            200000,
+		GasPrice:            "0.001aastra",
+		Sigs:                signList,
+	}
+
+	txBuilder, err := b.TransferMultiSignRawData(request)
+	if err != nil {
+		return 0, err
+	}
+
+	txBytes, err := b.rpcClient.TxConfig.TxEncoder()(txBuilder.GetTx())
+	if err != nil {
+		return 0, err
+	}
+
+	txSvcClient := tx.NewServiceClient(b.rpcClient)
+	simRes, err := txSvcClient.Simulate(context.Background(), &tx.SimulateRequest{
+		TxBytes: txBytes,
+	})
+
+	if err != nil {
+		return 0, err
+	}
+
+	return simRes.GasInfo.GasUsed, nil
 }
 
 func (b *Bank) ParserEthMsg(txs *Txs, msgEth *emvTypes.MsgEthereumTx) error {
