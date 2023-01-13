@@ -89,17 +89,11 @@ func (suite *AstraSdkTestSuite) TestTransfer() {
 	amount := big.NewInt(0).Mul(big.NewInt(10), big.NewInt(0).SetUint64(uint64(math.Pow10(18))))
 	fmt.Println("amount", amount.String())
 
-	gasPrice, err := bankClient.BaseFee()
-	if err != nil {
-		panic(err)
-	}
-
 	request := &bank.TransferRequest{
 		PrivateKey: "valve season sauce knife burden benefit zone field ask carpet fury vital action donate trade street ability artwork ball uniform garbage sugar warm differ",
 		Receiver:   "astra18dgn6vxsyk69xglsp8z0r6ltc5q2slzc2nglwd",
 		Amount:     amount,
 		GasLimit:   200000,
-		GasPrice:   gasPrice,
 	}
 
 	/*	txBuilder, err := bankClient.TransferRawData(request)
@@ -142,17 +136,11 @@ func (suite *AstraSdkTestSuite) TestTransferWithPrivateKey() {
 	amount := big.NewInt(0).Mul(big.NewInt(20), big.NewInt(0).SetUint64(uint64(math.Pow10(18))))
 	fmt.Println("amount", amount.String())
 
-	gasPrice, err := bankClient.BaseFee()
-	if err != nil {
-		panic(err)
-	}
-
 	request := &bank.TransferRequest{
 		PrivateKey: "69e2ece17baa00b1112217f530661a8b9d0ecabc8fe122fc1f403761c86a1ccc",
 		Receiver:   "astra1p6sscujfpygmrrxqlwqeqqw6r5lxk2x9gz9glh",
 		Amount:     amount,
 		GasLimit:   200000,
-		GasPrice:   gasPrice,
 	}
 
 	txBuilder, err := bankClient.TransferRawDataWithPrivateKey(request)

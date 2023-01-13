@@ -11,7 +11,6 @@ type TransferRequest struct {
 	Receiver   string
 	Amount     *big.Int
 	GasLimit   uint64
-	GasPrice   string
 }
 
 type SignTxWithSignerAddressRequest struct {
