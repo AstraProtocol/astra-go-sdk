@@ -60,6 +60,18 @@ func (b *Bank) AccountRetriever(addr string) (uint64, uint64, error) {
 	return accNum, accSeq, nil
 }
 
+func (b *Bank) BaseFee() (string, error) {
+	queryClient := emvTypes.NewQueryClient(b.rpcClient)
+
+	expRes := &emvTypes.QueryBaseFeeRequest{}
+	baseFee, err := queryClient.BaseFee(context.Background(), expRes)
+	if err != nil {
+		return "0", errors.Wrap(err, "BaseFee")
+	}
+
+	return fmt.Sprintf("%v%v", baseFee.BaseFee.String(), common.TokenSymbol), nil
+}
+
 func (b *Bank) CheckTx(txHash string) (*types.TxResponse, error) {
 	output, err := authtx.QueryTx(b.rpcClient, txHash)
 	if err != nil {
@@ -96,7 +108,12 @@ func (b *Bank) TransferRawData(param *TransferRequest) (client.TxBuilder, error)
 		types.NewCoins(coin),
 	)
 
-	newTx := common.NewTx(b.rpcClient, acc, param.GasLimit, param.GasPrice)
+	gasPrice, err := b.BaseFee()
+	if err != nil {
+		return nil, errors.Wrap(err, "BaseFee")
+	}
+
+	newTx := common.NewTx(b.rpcClient, acc, param.GasLimit, gasPrice)
 
 	txBuilder, err := newTx.BuildUnsignedTx(msg)
 	if err != nil {
@@ -157,7 +174,12 @@ func (b *Bank) TransferRawDataWithPrivateKey(param *TransferRequest) (client.TxB
 		types.NewCoins(coin),
 	)
 
-	newTx := common.NewTx(b.rpcClient, acc, param.GasLimit, param.GasPrice)
+	gasPrice, err := b.BaseFee()
+	if err != nil {
+		return nil, errors.Wrap(err, "BaseFee")
+	}
+
+	newTx := common.NewTx(b.rpcClient, acc, param.GasLimit, gasPrice)
 
 	txBuilder, err := newTx.BuildUnsignedTx(msg)
 	if err != nil {
@@ -278,7 +300,7 @@ func (b *Bank) TransferMultiSignRawData(param *TransferMultiSignRequest) (client
 	return txBuilder, nil
 }
 
-func (b *Bank) TransferMultiSignEstimateGas(privateKey []string, multiSign cryptoTypes.PubKey, amount *big.Int) (uint64, error) {
+func (b *Bank) TransferMultiSignEstimateGas(privateKey []string, multiSign cryptoTypes.PubKey, amount *big.Int, gasPrice string, gasLimit uint64) (uint64, error) {
 	//todo: account estimate is temp account, note: do not use this account
 
 	masterPk := multiSign
@@ -289,8 +311,8 @@ func (b *Bank) TransferMultiSignEstimateGas(privateKey []string, multiSign crypt
 			MulSignAccPublicKey: masterPk,
 			Receiver:            "astra156dh69y8j39eynue4jahrezg32rgl8eck5rhsl",
 			Amount:              amount,
-			GasLimit:            200000,
-			GasPrice:            "0.001aastra",
+			GasLimit:            gasLimit,
+			GasPrice:            gasPrice,
 		}
 
 		txBuilder, err := b.SignTxWithSignerAddress(request)
@@ -315,8 +337,8 @@ func (b *Bank) TransferMultiSignEstimateGas(privateKey []string, multiSign crypt
 		MulSignAccPublicKey: masterPk,
 		Receiver:            "astra156dh69y8j39eynue4jahrezg32rgl8eck5rhsl",
 		Amount:              amount,
-		GasLimit:            200000,
-		GasPrice:            "0.001aastra",
+		GasLimit:            gasLimit,
+		GasPrice:            gasPrice,
 		Sigs:                signList,
 	}
 

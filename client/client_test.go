@@ -89,12 +89,17 @@ func (suite *AstraSdkTestSuite) TestTransfer() {
 	amount := big.NewInt(0).Mul(big.NewInt(10), big.NewInt(0).SetUint64(uint64(math.Pow10(18))))
 	fmt.Println("amount", amount.String())
 
+	gasPrice, err := bankClient.BaseFee()
+	if err != nil {
+		panic(err)
+	}
+
 	request := &bank.TransferRequest{
 		PrivateKey: "valve season sauce knife burden benefit zone field ask carpet fury vital action donate trade street ability artwork ball uniform garbage sugar warm differ",
 		Receiver:   "astra18dgn6vxsyk69xglsp8z0r6ltc5q2slzc2nglwd",
 		Amount:     amount,
 		GasLimit:   200000,
-		GasPrice:   "0.001aastra",
+		GasPrice:   gasPrice,
 	}
 
 	/*	txBuilder, err := bankClient.TransferRawData(request)
@@ -137,12 +142,17 @@ func (suite *AstraSdkTestSuite) TestTransferWithPrivateKey() {
 	amount := big.NewInt(0).Mul(big.NewInt(20), big.NewInt(0).SetUint64(uint64(math.Pow10(18))))
 	fmt.Println("amount", amount.String())
 
+	gasPrice, err := bankClient.BaseFee()
+	if err != nil {
+		panic(err)
+	}
+
 	request := &bank.TransferRequest{
 		PrivateKey: "69e2ece17baa00b1112217f530661a8b9d0ecabc8fe122fc1f403761c86a1ccc",
 		Receiver:   "astra1p6sscujfpygmrrxqlwqeqqw6r5lxk2x9gz9glh",
 		Amount:     amount,
 		GasLimit:   200000,
-		GasPrice:   "0.001aastra",
+		GasPrice:   gasPrice,
 	}
 
 	txBuilder, err := bankClient.TransferRawDataWithPrivateKey(request)
@@ -233,17 +243,26 @@ func (suite *AstraSdkTestSuite) TestTransferMultiSign() {
 	listPrivate := []string{
 		"ignore risk morning strike school street radar silk recipe health december system inflict gold foster item end twenty magic shine oppose island loop impact",
 		"seven mean snap illness couch excite item topic tobacco erosion tourist blue van possible wolf gadget combine excess brush goddess glory subway few mind",
+		//"swap exhaust letter left light trust diet piano pride rifle trust orbit clip suggest achieve unaware please guess lawsuit doctor use bargain jealous weekend",
 	}
 
-	amount := big.NewInt(0).Mul(big.NewInt(2), big.NewInt(0).SetUint64(uint64(math.Pow10(18))))
+	listPrivate = listPrivate[:2]
+
+	amount := big.NewInt(0).Mul(big.NewInt(10), big.NewInt(0).SetUint64(uint64(math.Pow10(18))))
 	fmt.Println("amount", amount.String())
 
-	gasLimit, err := bankClient.TransferMultiSignEstimateGas(listPrivate, masterPk, amount)
+	gasPrice, err := bankClient.BaseFee()
+	if err != nil {
+		panic(err)
+	}
+
+	gasLimit, err := bankClient.TransferMultiSignEstimateGas(listPrivate, masterPk, amount, gasPrice, 200000)
 	if err != nil {
 		panic(err)
 	}
 
 	fmt.Println("gas", gasLimit)
+	fmt.Println("gasPrice", gasPrice)
 
 	fmt.Println("start signer")
 	signList := make([][]signingTypes.SignatureV2, 0)
@@ -255,7 +274,7 @@ func (suite *AstraSdkTestSuite) TestTransferMultiSign() {
 			Receiver:            "astra156dh69y8j39eynue4jahrezg32rgl8eck5rhsl",
 			Amount:              amount,
 			GasLimit:            gasLimit,
-			GasPrice:            "0.001aastra",
+			GasPrice:            gasPrice,
 		}
 
 		txBuilder, err := bankClient.SignTxWithSignerAddress(request)
@@ -285,7 +304,7 @@ func (suite *AstraSdkTestSuite) TestTransferMultiSign() {
 		Receiver:            "astra156dh69y8j39eynue4jahrezg32rgl8eck5rhsl",
 		Amount:              amount,
 		GasLimit:            gasLimit,
-		GasPrice:            "0.001aastra",
+		GasPrice:            gasPrice,
 		Sigs:                signList,
 	}
 
@@ -433,6 +452,17 @@ func (suite *AstraSdkTestSuite) TestGetTxDetail() {
 
 	fmt.Println(string(rsMarshal))
 
+}
+
+func (suite *AstraSdkTestSuite) TestBaseFee() {
+	bankClient := suite.Client.NewBankClient()
+	rs, err := bankClient.BaseFee()
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(rs)
 }
 
 func (suite *AstraSdkTestSuite) TestSequenceNumberFromPk() {
