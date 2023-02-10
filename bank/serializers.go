@@ -11,18 +11,17 @@ type TransferRequest struct {
 	Receiver   string
 	Amount     *big.Int
 	GasLimit   uint64
-	GasPrice   string
 }
 
 type SignTxWithSignerAddressRequest struct {
-	SignerPrivateKey string
-	SignerPublicKey  cryptoTypes.PubKey
-	Receiver         string
-	Amount           *big.Int
-	GasLimit         uint64
-	GasPrice         string
-	AccNum           uint64
-	SequeNum         uint64
+	SignerPrivateKey    string
+	MulSignAccPublicKey cryptoTypes.PubKey
+	Receiver            string
+	Amount              *big.Int
+	GasLimit            uint64
+	GasPrice            string
+	AccNum              uint64
+	SequeNum            uint64
 }
 
 type TransferMultiSignRequest struct {

@@ -6,7 +6,10 @@ import (
 	"github.com/AstraProtocol/astra-go-sdk/account"
 	"github.com/AstraProtocol/astra-go-sdk/common"
 	"github.com/cosmos/cosmos-sdk/client"
+	cryptoTypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/tx"
+	signingTypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -57,6 +60,18 @@ func (b *Bank) AccountRetriever(addr string) (uint64, uint64, error) {
 	return accNum, accSeq, nil
 }
 
+func (b *Bank) BaseFee() (string, error) {
+	queryClient := emvTypes.NewQueryClient(b.rpcClient)
+
+	expRes := &emvTypes.QueryBaseFeeRequest{}
+	baseFee, err := queryClient.BaseFee(context.Background(), expRes)
+	if err != nil {
+		return "0", errors.Wrap(err, "BaseFee")
+	}
+
+	return fmt.Sprintf("%v%v", baseFee.BaseFee.String(), common.TokenSymbol), nil
+}
+
 func (b *Bank) CheckTx(txHash string) (*types.TxResponse, error) {
 	output, err := authtx.QueryTx(b.rpcClient, txHash)
 	if err != nil {
@@ -93,7 +108,12 @@ func (b *Bank) TransferRawData(param *TransferRequest) (client.TxBuilder, error)
 		types.NewCoins(coin),
 	)
 
-	newTx := common.NewTx(b.rpcClient, acc, param.GasLimit, param.GasPrice)
+	gasPrice, err := b.BaseFee()
+	if err != nil {
+		return nil, errors.Wrap(err, "BaseFee")
+	}
+
+	newTx := common.NewTx(b.rpcClient, acc, param.GasLimit, gasPrice)
 
 	txBuilder, err := newTx.BuildUnsignedTx(msg)
 	if err != nil {
@@ -106,6 +126,33 @@ func (b *Bank) TransferRawData(param *TransferRequest) (client.TxBuilder, error)
 	}
 
 	return txBuilder, nil
+}
+
+func (b *Bank) TransferRawDataAndEstimateGas(param *TransferRequest) (client.TxBuilder, error) {
+	txBuilder, err := b.TransferRawData(param)
+	if err != nil {
+		return nil, err
+	}
+
+	txBytes, err := b.rpcClient.TxConfig.TxEncoder()(txBuilder.GetTx())
+	if err != nil {
+		return nil, err
+	}
+
+	txSvcClient := tx.NewServiceClient(b.rpcClient)
+	simRes, err := txSvcClient.Simulate(context.Background(), &tx.SimulateRequest{
+		TxBytes: txBytes,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if simRes.GasInfo.GasUsed > 0 {
+		param.GasLimit = simRes.GasInfo.GasUsed
+	}
+
+	return b.TransferRawData(param)
 }
 
 func (b *Bank) TransferRawDataWithPrivateKey(param *TransferRequest) (client.TxBuilder, error) {
@@ -127,7 +174,12 @@ func (b *Bank) TransferRawDataWithPrivateKey(param *TransferRequest) (client.TxB
 		types.NewCoins(coin),
 	)
 
-	newTx := common.NewTx(b.rpcClient, acc, param.GasLimit, param.GasPrice)
+	gasPrice, err := b.BaseFee()
+	if err != nil {
+		return nil, errors.Wrap(err, "BaseFee")
+	}
+
+	newTx := common.NewTx(b.rpcClient, acc, param.GasLimit, gasPrice)
 
 	txBuilder, err := newTx.BuildUnsignedTx(msg)
 	if err != nil {
@@ -142,14 +194,41 @@ func (b *Bank) TransferRawDataWithPrivateKey(param *TransferRequest) (client.TxB
 	return txBuilder, nil
 }
 
+func (b *Bank) TransferRawDataWithPrivateKeyAndEstimateGas(param *TransferRequest) (client.TxBuilder, error) {
+	txBuilder, err := b.TransferRawDataWithPrivateKey(param)
+	if err != nil {
+		return nil, err
+	}
+
+	txBytes, err := b.rpcClient.TxConfig.TxEncoder()(txBuilder.GetTx())
+	if err != nil {
+		return nil, err
+	}
+
+	txSvcClient := tx.NewServiceClient(b.rpcClient)
+	simRes, err := txSvcClient.Simulate(context.Background(), &tx.SimulateRequest{
+		TxBytes: txBytes,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if simRes.GasInfo.GasUsed > 0 {
+		param.GasLimit = simRes.GasInfo.GasUsed
+	}
+
+	return b.TransferRawDataWithPrivateKey(param)
+}
+
 func (b *Bank) SignTxWithSignerAddress(param *SignTxWithSignerAddressRequest) (client.TxBuilder, error) {
 	auth := account.NewAccount()
-	acc, err := auth.ImportAccount(param.SignerPrivateKey)
+	privateKey, err := auth.ImportAccount(param.SignerPrivateKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "ImportAccount")
 	}
 
-	from := types.AccAddress(param.SignerPublicKey.Address())
+	from := types.AccAddress(param.MulSignAccPublicKey.Address())
 	receiver, err := types.AccAddressFromBech32(param.Receiver)
 	if err != nil {
 		return nil, errors.Wrap(err, "AccAddressFromBech32")
@@ -162,14 +241,20 @@ func (b *Bank) SignTxWithSignerAddress(param *SignTxWithSignerAddressRequest) (c
 		types.NewCoins(amount),
 	)
 
-	newTx := common.NewTxMulSign(b.rpcClient, acc, param.GasLimit, param.GasPrice, param.SequeNum, param.AccNum)
+	newTx := common.NewTxMulSign(
+		b.rpcClient,
+		privateKey,
+		param.GasLimit,
+		param.GasPrice,
+		param.SequeNum,
+		param.AccNum)
 
 	txBuilder, err := newTx.BuildUnsignedTx(msg)
 	if err != nil {
 		return nil, errors.Wrap(err, "BuildUnsignedTx")
 	}
 
-	err = newTx.SignTxWithSignerAddress(txBuilder, param.SignerPublicKey)
+	err = newTx.SignTxWithSignerAddress(txBuilder, param.MulSignAccPublicKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "SignTxWithSignerAddress")
 	}
@@ -193,12 +278,14 @@ func (b *Bank) TransferMultiSignRawData(param *TransferMultiSignRequest) (client
 		types.NewCoins(amount),
 	)
 
-	newTx := common.NewTxMulSign(b.rpcClient,
+	newTx := common.NewTxMulSign(
+		b.rpcClient,
 		nil,
 		param.GasLimit,
 		param.GasPrice,
 		param.SequeNum,
-		param.AccNum)
+		param.AccNum,
+	)
 
 	txBuilder, err := newTx.BuildUnsignedTx(msg)
 	if err != nil {
@@ -211,6 +298,70 @@ func (b *Bank) TransferMultiSignRawData(param *TransferMultiSignRequest) (client
 	}
 
 	return txBuilder, nil
+}
+
+func (b *Bank) TransferMultiSignEstimateGas(privateKey []string, multiSign cryptoTypes.PubKey, amount *big.Int, gasPrice string, gasLimit uint64) (uint64, error) {
+	//todo: account estimate is temp account, note: do not use this account
+
+	masterPk := multiSign
+	signList := make([][]signingTypes.SignatureV2, 0)
+	for _, s := range privateKey {
+		request := &SignTxWithSignerAddressRequest{
+			SignerPrivateKey:    s,
+			MulSignAccPublicKey: masterPk,
+			Receiver:            "astra156dh69y8j39eynue4jahrezg32rgl8eck5rhsl",
+			Amount:              amount,
+			GasLimit:            gasLimit,
+			GasPrice:            gasPrice,
+		}
+
+		txBuilder, err := b.SignTxWithSignerAddress(request)
+		if err != nil {
+			return 0, err
+		}
+
+		sign, err := common.TxBuilderSignatureJsonEncoder(b.rpcClient.TxConfig, txBuilder)
+		if err != nil {
+			return 0, err
+		}
+
+		signByte, err := common.TxBuilderSignatureJsonDecoder(b.rpcClient.TxConfig, sign)
+		if err != nil {
+			return 0, err
+		}
+
+		signList = append(signList, signByte)
+	}
+
+	request := &TransferMultiSignRequest{
+		MulSignAccPublicKey: masterPk,
+		Receiver:            "astra156dh69y8j39eynue4jahrezg32rgl8eck5rhsl",
+		Amount:              amount,
+		GasLimit:            gasLimit,
+		GasPrice:            gasPrice,
+		Sigs:                signList,
+	}
+
+	txBuilder, err := b.TransferMultiSignRawData(request)
+	if err != nil {
+		return 0, err
+	}
+
+	txBytes, err := b.rpcClient.TxConfig.TxEncoder()(txBuilder.GetTx())
+	if err != nil {
+		return 0, err
+	}
+
+	txSvcClient := tx.NewServiceClient(b.rpcClient)
+	simRes, err := txSvcClient.Simulate(context.Background(), &tx.SimulateRequest{
+		TxBytes: txBytes,
+	})
+
+	if err != nil {
+		return 0, err
+	}
+
+	return simRes.GasInfo.GasUsed, nil
 }
 
 func (b *Bank) ParserEthMsg(txs *Txs, msgEth *emvTypes.MsgEthereumTx) error {

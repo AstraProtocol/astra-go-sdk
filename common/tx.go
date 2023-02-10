@@ -5,12 +5,10 @@ import (
 	"github.com/AstraProtocol/astra-go-sdk/account"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
-	"github.com/ethereum/go-ethereum/common"
-
 	"github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authSigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
+	"github.com/ethereum/go-ethereum/common"
 	emvTypes "github.com/evmos/ethermint/x/evm/types"
 	"github.com/pkg/errors"
 )
@@ -64,7 +62,6 @@ func (t *Tx) prepareSignTx() error {
 		var err error
 
 		hexAddress := common.BytesToAddress(t.privateKey.PublicKey().Address().Bytes())
-
 		queryClient := emvTypes.NewQueryClient(t.rpcClient)
 		cosmosAccount, err := queryClient.CosmosAccount(context.Background(), &emvTypes.QueryCosmosAccountRequest{Address: hexAddress.String()})
 		if err != nil {

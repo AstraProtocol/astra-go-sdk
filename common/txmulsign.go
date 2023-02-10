@@ -146,12 +146,12 @@ func (t *TxMulSign) CreateTxMulSign(txBuilder client.TxBuilder, multiSignAccPubK
 		return errors.Wrap(err, "prepareSignTx")
 	}
 
-	multisigPub, ok := multiSignAccPubKey.(*keyMultisig.LegacyAminoPubKey)
+	legacyAminoPubKey, ok := multiSignAccPubKey.(*keyMultisig.LegacyAminoPubKey)
 	if !ok {
 		return errors.Wrap(errors.New("set type error"), "LegacyAminoPubKey")
 	}
 
-	multisigSig := multisig.NewMultisig(len(multisigPub.PubKeys))
+	multiSigPk := multisig.NewMultisig(len(legacyAminoPubKey.PubKeys))
 
 	for _, v2s := range signOfSigner {
 		signingData := authSigning.SignerData{
@@ -166,22 +166,23 @@ func (t *TxMulSign) CreateTxMulSign(txBuilder client.TxBuilder, multiSignAccPubK
 				signingData,
 				sig.Data,
 				t.rpcClient.TxConfig.SignModeHandler(),
-				txBuilder.GetTx())
+				txBuilder.GetTx(),
+			)
 
 			if err != nil {
 				addr := types.AccAddress(sig.PubKey.Address())
 				return fmt.Errorf("couldn't verify signature for address %s. error = %v", addr.String(), err.Error())
 			}
 
-			if err := multisig.AddSignatureV2(multisigSig, sig, multisigPub.GetPubKeys()); err != nil {
+			if err := multisig.AddSignatureV2(multiSigPk, sig, legacyAminoPubKey.GetPubKeys()); err != nil {
 				return errors.Wrap(err, "AddSignatureV2")
 			}
 		}
 	}
 
 	sigV2 := signing.SignatureV2{
-		PubKey:   multisigPub,
-		Data:     multisigSig,
+		PubKey:   legacyAminoPubKey,
+		Data:     multiSigPk,
 		Sequence: t.txf.Sequence(),
 	}
 

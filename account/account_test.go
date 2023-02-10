@@ -6,7 +6,7 @@ import (
 )
 
 func TestCreateAccount(t *testing.T) {
-	n := NewAccount(60)
+	n := NewAccount()
 	key, err := n.CreateAccount()
 	if err != nil {
 		panic(err)
@@ -14,7 +14,7 @@ func TestCreateAccount(t *testing.T) {
 	fmt.Println("key type 60")
 	fmt.Println(key.String())
 
-	n1 := NewAccount(118)
+	n1 := NewAccount()
 	key1, err := n1.CreateAccount()
 	if err != nil {
 		panic(err)
@@ -25,7 +25,7 @@ func TestCreateAccount(t *testing.T) {
 }
 
 func TestCreateMulAccount(t *testing.T) {
-	n := NewAccount(60)
+	n := NewAccount()
 	key, addr, pucKey, err := n.CreateMulSignAccount(3, 2)
 	if err != nil {
 		panic(err)
@@ -42,7 +42,7 @@ func TestCreateMulAccount(t *testing.T) {
 }
 
 func TestImportPrivateKey(t *testing.T) {
-	n := NewAccount(60)
+	n := NewAccount()
 	key, err := n.ImportPrivateKey("c6849b352fb9027e0a4592c52226de2f37747192412f50f8daeac6c5a6f5e9de")
 	if err != nil {
 		panic(err)
