@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	emvTypes "github.com/evmos/ethermint/x/evm/types"
 	"github.com/pkg/errors"
+	"time"
 )
 
 type Tx struct {
@@ -56,6 +57,9 @@ func (t *Tx) prepareSignTx() error {
 		return errors.Wrap(err, "EnsureExists")
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*60))
+	defer cancel()
+
 	initNum, initSeq := t.txf.AccountNumber(), t.txf.Sequence()
 	if initNum == 0 || initSeq == 0 {
 		var accNum, accSeq uint64
@@ -63,7 +67,7 @@ func (t *Tx) prepareSignTx() error {
 
 		hexAddress := common.BytesToAddress(t.privateKey.PublicKey().Address().Bytes())
 		queryClient := emvTypes.NewQueryClient(t.rpcClient)
-		cosmosAccount, err := queryClient.CosmosAccount(context.Background(), &emvTypes.QueryCosmosAccountRequest{Address: hexAddress.String()})
+		cosmosAccount, err := queryClient.CosmosAccount(ctx, &emvTypes.QueryCosmosAccountRequest{Address: hexAddress.String()})
 		if err != nil {
 			return errors.Wrap(err, "CosmosAccount")
 		}

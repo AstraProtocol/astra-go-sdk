@@ -19,6 +19,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"math/big"
 	"strings"
+	"time"
 )
 
 type Bank struct {
@@ -33,9 +34,12 @@ func NewBank(rpcClient client.Context, tokenSymbol string) *Bank {
 func (b *Bank) Balance(addr string) (*big.Int, error) {
 	var header metadata.MD
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*60))
+	defer cancel()
+
 	bankClient := bankTypes.NewQueryClient(b.rpcClient)
 	bankRes, err := bankClient.Balance(
-		context.Background(),
+		ctx,
 		&bankTypes.QueryBalanceRequest{Address: addr, Denom: b.tokenSymbol},
 		grpc.Header(&header),
 	)
@@ -48,8 +52,11 @@ func (b *Bank) Balance(addr string) (*big.Int, error) {
 }
 
 func (b *Bank) AccountRetriever(addr string) (uint64, uint64, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*60))
+	defer cancel()
+
 	queryClient := emvTypes.NewQueryClient(b.rpcClient)
-	cosmosAccount, err := queryClient.CosmosAccount(context.Background(), &emvTypes.QueryCosmosAccountRequest{Address: addr})
+	cosmosAccount, err := queryClient.CosmosAccount(ctx, &emvTypes.QueryCosmosAccountRequest{Address: addr})
 	if err != nil {
 		return 0, 0, errors.Wrap(err, "CosmosAccount")
 	}

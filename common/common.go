@@ -17,6 +17,7 @@ import (
 	"math"
 	"math/big"
 	"strconv"
+	"time"
 )
 
 func DecodePublicKey(rpcClient client.Context, pkJSON string) (cryptoTypes.PubKey, error) {
@@ -162,8 +163,11 @@ func ConvertToDecimal(amount string, decimal int) (float64, error) {
 }
 
 func Simulate(client client.Context, txByte []byte) (uint64, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*60))
+	defer cancel()
+
 	txSvcClient := tx.NewServiceClient(client)
-	simRes, err := txSvcClient.Simulate(context.Background(), &tx.SimulateRequest{
+	simRes, err := txSvcClient.Simulate(ctx, &tx.SimulateRequest{
 		TxBytes: txByte,
 	})
 

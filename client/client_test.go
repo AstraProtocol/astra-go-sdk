@@ -47,7 +47,7 @@ func TestAstraSdkTestSuite(t *testing.T) {
 
 func (suite *AstraSdkTestSuite) TestInitBank() {
 	bankClient := suite.Client.NewBankClient()
-	balance, err := bankClient.Balance("astra1vcf8dwxgxtdqd3cfm0ptpsrrutcayhhex84e5k")
+	balance, err := bankClient.Balance("astra1p6sscujfpygmrrxqlwqeqqw6r5lxk2x9gz9glh")
 	if err != nil {
 		panic(err)
 	}
@@ -86,7 +86,7 @@ func (suite *AstraSdkTestSuite) TestGenMulSignAccount() {
 func (suite *AstraSdkTestSuite) TestTransfer() {
 	bankClient := suite.Client.NewBankClient()
 
-	amount := big.NewInt(0).Mul(big.NewInt(10), big.NewInt(0).SetUint64(uint64(math.Pow10(18))))
+	amount := big.NewInt(0).Mul(big.NewInt(100), big.NewInt(0).SetUint64(uint64(math.Pow10(18))))
 	fmt.Println("amount", amount.String())
 
 	request := &bank.TransferRequest{
