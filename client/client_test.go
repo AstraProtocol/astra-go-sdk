@@ -47,7 +47,7 @@ func TestAstraSdkTestSuite(t *testing.T) {
 
 func (suite *AstraSdkTestSuite) TestInitBank() {
 	bankClient := suite.Client.NewBankClient()
-	balance, err := bankClient.Balance("astra1p6sscujfpygmrrxqlwqeqqw6r5lxk2x9gz9glh")
+	balance, err := bankClient.Balance("astra1vcf8dwxgxtdqd3cfm0ptpsrrutcayhhex84e5k")
 	if err != nil {
 		panic(err)
 	}
@@ -91,20 +91,21 @@ func (suite *AstraSdkTestSuite) TestTransfer() {
 
 	request := &bank.TransferRequest{
 		PrivateKey: "valve season sauce knife burden benefit zone field ask carpet fury vital action donate trade street ability artwork ball uniform garbage sugar warm differ",
-		Receiver:   "astra18dgn6vxsyk69xglsp8z0r6ltc5q2slzc2nglwd",
+		Receiver:   "astra1p6sscujfpygmrrxqlwqeqqw6r5lxk2x9gz9glh",
 		Amount:     amount,
 		GasLimit:   200000,
+		GasPrice:   "10000000000000aastra",
 	}
 
-	/*	txBuilder, err := bankClient.TransferRawData(request)
-		if err != nil {
-			panic(err)
-		}*/
-
-	txBuilder, err := bankClient.TransferRawDataAndEstimateGas(request)
+	txBuilder, err := bankClient.TransferRawData(request)
 	if err != nil {
 		panic(err)
 	}
+
+	/*txBuilder, err := bankClient.TransferRawDataAndEstimateGas(request)
+	if err != nil {
+		panic(err)
+	}*/
 
 	txJson, err := common.TxBuilderJsonEncoder(suite.Client.rpcClient.TxConfig, txBuilder)
 	if err != nil {
@@ -123,7 +124,7 @@ func (suite *AstraSdkTestSuite) TestTransfer() {
 
 	fmt.Println(ethCommon.BytesToHash(txByte).String())
 
-	res, err := suite.Client.rpcClient.BroadcastTxCommit(txByte)
+	res, err := suite.Client.rpcClient.BroadcastTxSync(txByte)
 	if err != nil {
 		panic(err)
 	}
@@ -133,7 +134,7 @@ func (suite *AstraSdkTestSuite) TestTransfer() {
 
 func (suite *AstraSdkTestSuite) TestTransferWithPrivateKey() {
 	bankClient := suite.Client.NewBankClient()
-	amount := big.NewInt(0).Mul(big.NewInt(20), big.NewInt(0).SetUint64(uint64(math.Pow10(18))))
+	amount := big.NewInt(0).Mul(big.NewInt(10), big.NewInt(0).SetUint64(uint64(math.Pow10(18))))
 	fmt.Println("amount", amount.String())
 
 	request := &bank.TransferRequest{
@@ -141,12 +142,18 @@ func (suite *AstraSdkTestSuite) TestTransferWithPrivateKey() {
 		Receiver:   "astra1p6sscujfpygmrrxqlwqeqqw6r5lxk2x9gz9glh",
 		Amount:     amount,
 		GasLimit:   200000,
+		GasPrice:   "10000000000000aastra",
 	}
 
 	txBuilder, err := bankClient.TransferRawDataWithPrivateKey(request)
 	if err != nil {
 		panic(err)
 	}
+	/*
+		txBuilder, err := bankClient.TransferRawDataWithPrivateKeyAndEstimateGas(request)
+		if err != nil {
+			panic(err)
+		}*/
 
 	txJson, err := common.TxBuilderJsonEncoder(suite.Client.rpcClient.TxConfig, txBuilder)
 	if err != nil {
@@ -165,7 +172,7 @@ func (suite *AstraSdkTestSuite) TestTransferWithPrivateKey() {
 
 	fmt.Println(ethCommon.BytesToHash(txByte).String())
 
-	res, err := suite.Client.rpcClient.BroadcastTxCommit(txByte)
+	res, err := suite.Client.rpcClient.BroadcastTxSync(txByte)
 	if err != nil {
 		panic(err)
 	}
@@ -239,15 +246,18 @@ func (suite *AstraSdkTestSuite) TestTransferMultiSign() {
 	amount := big.NewInt(0).Mul(big.NewInt(10), big.NewInt(0).SetUint64(uint64(math.Pow10(18))))
 	fmt.Println("amount", amount.String())
 
-	gasPrice, err := bankClient.BaseFee()
-	if err != nil {
-		panic(err)
-	}
+	/*	gasPrice, err := bankClient.BaseFee()
+		if err != nil {
+			panic(err)
+		}*/
 
-	gasLimit, err := bankClient.TransferMultiSignEstimateGas(listPrivate, masterPk, amount, gasPrice, 200000)
+	/*gasLimit, err := bankClient.TransferMultiSignEstimateGas(listPrivate, masterPk, amount, gasPrice, 200000)
 	if err != nil {
 		panic(err)
-	}
+	}*/
+
+	gasPrice := "10000000000000aastra"
+	gasLimit := uint64(200000)
 
 	fmt.Println("gas", gasLimit)
 	fmt.Println("gasPrice", gasPrice)
@@ -256,10 +266,11 @@ func (suite *AstraSdkTestSuite) TestTransferMultiSign() {
 	signList := make([][]signingTypes.SignatureV2, 0)
 	for i, s := range listPrivate {
 		fmt.Println("index", i)
+
 		request := &bank.SignTxWithSignerAddressRequest{
 			SignerPrivateKey:    s,
 			MulSignAccPublicKey: masterPk,
-			Receiver:            "astra156dh69y8j39eynue4jahrezg32rgl8eck5rhsl",
+			Receiver:            "astra1p6sscujfpygmrrxqlwqeqqw6r5lxk2x9gz9glh",
 			Amount:              amount,
 			GasLimit:            gasLimit,
 			GasPrice:            gasPrice,
@@ -289,7 +300,7 @@ func (suite *AstraSdkTestSuite) TestTransferMultiSign() {
 	//200
 	request := &bank.TransferMultiSignRequest{
 		MulSignAccPublicKey: masterPk,
-		Receiver:            "astra156dh69y8j39eynue4jahrezg32rgl8eck5rhsl",
+		Receiver:            "astra1p6sscujfpygmrrxqlwqeqqw6r5lxk2x9gz9glh",
 		Amount:              amount,
 		GasLimit:            gasLimit,
 		GasPrice:            gasPrice,
@@ -316,7 +327,7 @@ func (suite *AstraSdkTestSuite) TestTransferMultiSign() {
 	txHash := common.TxHash(txByte)
 	fmt.Println("txHash", txHash)
 
-	_, err = suite.Client.rpcClient.BroadcastTxCommit(txByte)
+	_, err = suite.Client.rpcClient.BroadcastTxSync(txByte)
 	if err != nil {
 		panic(err)
 	}
@@ -325,7 +336,7 @@ func (suite *AstraSdkTestSuite) TestTransferMultiSign() {
 
 func (suite *AstraSdkTestSuite) TestAddressValid() {
 	addressCheck := "astra1hann2zj3sx3ympd40ptxdmpd4nd4eypm45zhhr"
-	addressCheck = "astra19a3mu6k0y326mcny60m3x70qfxtkms20sn5j8p"
+
 	receiver, err := types.AccAddressFromBech32(addressCheck)
 	if err != nil {
 		panic(err)
@@ -340,7 +351,7 @@ func (suite *AstraSdkTestSuite) TestAddressValid() {
 
 func (suite *AstraSdkTestSuite) TestConvertHexToCosmosAddress() {
 	eth := "0x9cc92bd19df168539ba7c73b450db998b0e79761"
-	cosmos := "astra1nnyjh5va79598xa8cua52rdenzcw09mpwfekts"
+	cosmos := "astra13cqqztgdf3l0sn9fvm0n7v4xjkj5luha3zd4yq"
 
 	rs, _ := common.EthAddressToCosmosAddress(eth)
 	fmt.Println(rs)
@@ -354,7 +365,7 @@ func (suite *AstraSdkTestSuite) TestConvertHexToCosmosAddress() {
 func (suite *AstraSdkTestSuite) TestCheckTx() {
 	bankClient := suite.Client.NewBankClient()
 	//rs, err := bankClient.CheckTx("646F944DCDB201F674C109E6EF9A594ADBCC33B8F0FA054D7B3F4ABE4CCA2AEB")
-	rs, err := bankClient.CheckTx("25D2704C3ABDFE3DBBC1A8202A15D43A2E86D7F1F24AD2E704A7F50FCB75FB94")
+	rs, err := bankClient.CheckTx("F977DFB57F7F5B45508989DFB6C56AADDDB7F70EDD03636FDB89CF7A802D5B40")
 	if err != nil {
 		panic(err)
 	}
@@ -430,7 +441,7 @@ func (suite *AstraSdkTestSuite) TestScanner() {
 
 func (suite *AstraSdkTestSuite) TestGetTxDetail() {
 	bankClient := suite.Client.NewBankClient()
-	rs, err := bankClient.TxDetail("BBB520F3A2D1FC48520C2FFF61A89848C4D36E2EB0588B3C90FC485D3B7AEA90")
+	rs, err := bankClient.TxDetail("0995F4341970E12BFE5FA958ABD2A373022C78AB19D700B1F8E01C9DA8DC0CAA")
 
 	if err != nil {
 		panic(err)
@@ -453,9 +464,19 @@ func (suite *AstraSdkTestSuite) TestBaseFee() {
 	fmt.Println(rs)
 }
 
+func (suite *AstraSdkTestSuite) TestGetAccountRetriever() {
+	bankClient := suite.Client.NewBankClient()
+	accNum, accSeq, err := bankClient.AccountRetriever("0x661276b8c832da06c709dbc2b0c063e2f1d25ef9")
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(accNum)
+	fmt.Println(accSeq)
+}
+
 func (suite *AstraSdkTestSuite) TestSequenceNumberFromPk() {
 	mulSignAccPubKey := "{\"@type\":\"/cosmos.crypto.multisig.LegacyAminoPubKey\",\"threshold\":2,\"public_keys\":[{\"@type\":\"/ethermint.crypto.v1.ethsecp256k1.PubKey\",\"key\":\"A0UjEVXxXA7JY2oou5HPH7FuPSyJ2hAfDMc4XThXiopM\"},{\"@type\":\"/ethermint.crypto.v1.ethsecp256k1.PubKey\",\"key\":\"A6DFr74kQmk/k88fCTPCxmf9kyFJMhFUF21IPFY7XoV2\"},{\"@type\":\"/ethermint.crypto.v1.ethsecp256k1.PubKey\",\"key\":\"AgPQELGzKmlAaSb01OKbmuL1f17MHJshkh9s9xAWxMa3\"}]}"
-
 	walletMultiPub, err := common.DecodePublicKey(suite.Client.RpcClient(), mulSignAccPubKey)
 	if err != nil {
 		panic(err)

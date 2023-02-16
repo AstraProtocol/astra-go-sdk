@@ -132,6 +132,18 @@ func (t *TxMulSign) SignTxWithSignerAddress(txBuilder client.TxBuilder, multiSig
 		return errors.Wrap(err, "SignWithPrivKey")
 	}
 
+	err = authSigning.VerifySignature(
+		pubKey,
+		signerData,
+		signWithPrivKey.Data,
+		t.rpcClient.TxConfig.SignModeHandler(),
+		txBuilder.GetTx(),
+	)
+
+	if err != nil {
+		return errors.Wrap(err, "VerifySignature")
+	}
+
 	err = txBuilder.SetSignatures(signWithPrivKey)
 	if err != nil {
 		return errors.Wrap(err, "SetSignatures")
