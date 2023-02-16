@@ -108,12 +108,12 @@ func (b *Bank) TransferRawData(param *TransferRequest) (client.TxBuilder, error)
 		types.NewCoins(coin),
 	)
 
-	gasPrice, err := b.BaseFee()
+	/*gasPrice, err := b.BaseFee()
 	if err != nil {
 		return nil, errors.Wrap(err, "BaseFee")
-	}
+	}*/
 
-	newTx := common.NewTx(b.rpcClient, acc, param.GasLimit, gasPrice)
+	newTx := common.NewTx(b.rpcClient, acc, param.GasLimit, param.GasPrice)
 
 	txBuilder, err := newTx.BuildUnsignedTx(msg)
 	if err != nil {
@@ -174,12 +174,12 @@ func (b *Bank) TransferRawDataWithPrivateKey(param *TransferRequest) (client.TxB
 		types.NewCoins(coin),
 	)
 
-	gasPrice, err := b.BaseFee()
+	/*gasPrice, err := b.BaseFee()
 	if err != nil {
 		return nil, errors.Wrap(err, "BaseFee")
-	}
+	}*/
 
-	newTx := common.NewTx(b.rpcClient, acc, param.GasLimit, gasPrice)
+	newTx := common.NewTx(b.rpcClient, acc, param.GasLimit, param.GasPrice)
 
 	txBuilder, err := newTx.BuildUnsignedTx(msg)
 	if err != nil {

@@ -63,7 +63,7 @@ func (c *Client) Init(cfg *config.Config) {
 	rpcClient := sdkClient.Context{}
 	rpcClient = rpcClient.
 		WithClient(rpcHttp).
-		//WithNodeURI(c.endpoint).
+		//WithNodeURI(cfg.Endpoint).
 		WithCodec(encodingConfig.Marshaler).
 		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).
 		WithTxConfig(encodingConfig.TxConfig).
