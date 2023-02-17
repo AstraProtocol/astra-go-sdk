@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"github.com/AstraProtocol/astra-go-sdk/account"
+	"github.com/AstraProtocol/astra-go-sdk/config"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/types"
@@ -57,7 +58,7 @@ func (t *Tx) prepareSignTx() error {
 		return errors.Wrap(err, "EnsureExists")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*60))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*config.ReqTimeout))
 	defer cancel()
 
 	initNum, initSeq := t.txf.AccountNumber(), t.txf.Sequence()
