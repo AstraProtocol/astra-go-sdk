@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/AstraProtocol/astra-go-sdk/account"
 	"github.com/AstraProtocol/astra-go-sdk/common"
-	"github.com/AstraProtocol/astra-go-sdk/config"
 	"github.com/cosmos/cosmos-sdk/client"
 	cryptoTypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types"
@@ -20,7 +19,6 @@ import (
 	"google.golang.org/grpc/metadata"
 	"math/big"
 	"strings"
-	"time"
 )
 
 type Bank struct {
@@ -35,9 +33,6 @@ func NewBank(rpcClient client.Context, tokenSymbol string) *Bank {
 func (b *Bank) Balance(addr string) (*big.Int, error) {
 	var header metadata.MD
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*config.ReqTimeout))
-	defer cancel()
-
 	ethAddr, err := common.CosmosAddressToEthAddress(addr)
 	if err != nil {
 		return nil, errors.Wrap(err, "Balance")
@@ -45,7 +40,7 @@ func (b *Bank) Balance(addr string) (*big.Int, error) {
 
 	bankClient := emvTypes.NewQueryClient(b.rpcClient)
 	bankRes, err := bankClient.Balance(
-		ctx,
+		context.Background(),
 		&emvTypes.QueryBalanceRequest{Address: ethAddr},
 		grpc.Header(&header),
 	)
@@ -63,11 +58,8 @@ func (b *Bank) Balance(addr string) (*big.Int, error) {
 }
 
 func (b *Bank) AccountRetriever(addr string) (uint64, uint64, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*config.ReqTimeout))
-	defer cancel()
-
 	queryClient := emvTypes.NewQueryClient(b.rpcClient)
-	cosmosAccount, err := queryClient.CosmosAccount(ctx, &emvTypes.QueryCosmosAccountRequest{Address: addr})
+	cosmosAccount, err := queryClient.CosmosAccount(context.Background(), &emvTypes.QueryCosmosAccountRequest{Address: addr})
 	if err != nil {
 		return 0, 0, errors.Wrap(err, "CosmosAccount")
 	}

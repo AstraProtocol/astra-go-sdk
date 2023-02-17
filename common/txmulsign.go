@@ -4,16 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/AstraProtocol/astra-go-sdk/account"
-	"github.com/AstraProtocol/astra-go-sdk/config"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
-	cryptoTypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	"github.com/ethereum/go-ethereum/common"
-	"time"
-
 	keyMultisig "github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
+	cryptoTypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/crypto/types/multisig"
 	"github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authSigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
@@ -66,9 +63,6 @@ func (t *TxMulSign) prepareSignTx(pubKey cryptoTypes.PubKey) error {
 		return errors.Wrap(err, "EnsureExists")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*config.ReqTimeout))
-	defer cancel()
-
 	initNum, initSeq := t.txf.AccountNumber(), t.txf.Sequence()
 	if initNum == 0 || initSeq == 0 {
 		var accNum, accSeq uint64
@@ -77,7 +71,7 @@ func (t *TxMulSign) prepareSignTx(pubKey cryptoTypes.PubKey) error {
 		hexAddress := common.BytesToAddress(pubKey.Address().Bytes())
 
 		queryClient := emvTypes.NewQueryClient(t.rpcClient)
-		cosmosAccount, err := queryClient.CosmosAccount(ctx, &emvTypes.QueryCosmosAccountRequest{Address: hexAddress.String()})
+		cosmosAccount, err := queryClient.CosmosAccount(context.Background(), &emvTypes.QueryCosmosAccountRequest{Address: hexAddress.String()})
 		if err != nil {
 			return errors.Wrap(err, "CosmosAccount")
 		}
