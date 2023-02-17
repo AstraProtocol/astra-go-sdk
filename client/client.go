@@ -56,7 +56,7 @@ func (c *Client) init(cfg *config.Config) {
 
 	//github.com/cosmos/cosmos-sdk/simapp/app.go
 	//github.com/evmos/ethermint@v0.19.0/app/app.go -> selected
-	rpcHttp, err := rpchttp.NewWithTimeout(cfg.Endpoint, "/websocket", 120)
+	rpcHttp, err := rpchttp.New(cfg.Endpoint, "/websocket")
 	if err != nil {
 		fmt.Println("rpc http error ", err.Error())
 		panic(err)
