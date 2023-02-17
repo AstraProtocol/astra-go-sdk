@@ -1,6 +1,6 @@
 package config
 
-const ReqTimeout = 5
+const ReqTimeout = 60
 
 type Config struct {
 	ChainId       string `json:"chain_id,omitempty"`
