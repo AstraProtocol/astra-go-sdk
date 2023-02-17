@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/AstraProtocol/astra-go-sdk/account"
+	"github.com/AstraProtocol/astra-go-sdk/config"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	cryptoTypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -65,7 +66,7 @@ func (t *TxMulSign) prepareSignTx(pubKey cryptoTypes.PubKey) error {
 		return errors.Wrap(err, "EnsureExists")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*60))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*config.ReqTimeout))
 	defer cancel()
 
 	initNum, initSeq := t.txf.AccountNumber(), t.txf.Sequence()

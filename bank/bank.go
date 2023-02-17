@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/AstraProtocol/astra-go-sdk/account"
 	"github.com/AstraProtocol/astra-go-sdk/common"
+	"github.com/AstraProtocol/astra-go-sdk/config"
 	"github.com/cosmos/cosmos-sdk/client"
 	cryptoTypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types"
@@ -34,13 +35,18 @@ func NewBank(rpcClient client.Context, tokenSymbol string) *Bank {
 func (b *Bank) Balance(addr string) (*big.Int, error) {
 	var header metadata.MD
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*60))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*config.ReqTimeout))
 	defer cancel()
 
-	bankClient := bankTypes.NewQueryClient(b.rpcClient)
+	ethAddr, err := common.CosmosAddressToEthAddress(addr)
+	if err != nil {
+		return nil, errors.Wrap(err, "Balance")
+	}
+
+	bankClient := emvTypes.NewQueryClient(b.rpcClient)
 	bankRes, err := bankClient.Balance(
 		ctx,
-		&bankTypes.QueryBalanceRequest{Address: addr, Denom: b.tokenSymbol},
+		&emvTypes.QueryBalanceRequest{Address: ethAddr},
 		grpc.Header(&header),
 	)
 
@@ -48,11 +54,16 @@ func (b *Bank) Balance(addr string) (*big.Int, error) {
 		return nil, errors.Wrap(err, "Balance")
 	}
 
-	return bankRes.Balance.Amount.BigInt(), nil
+	balance, ok := big.NewInt(0).SetString(bankRes.Balance, 10)
+	if !ok {
+		return nil, errors.Errorf("balance parser %v error", bankRes.Balance)
+	}
+
+	return balance, nil
 }
 
 func (b *Bank) AccountRetriever(addr string) (uint64, uint64, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*60))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*config.ReqTimeout))
 	defer cancel()
 
 	queryClient := emvTypes.NewQueryClient(b.rpcClient)
@@ -492,7 +503,7 @@ func (b *Bank) TxDetail(txHash string) (*Txs, error) {
 	if ok {
 		err := b.ParserEthMsg(txs, msgEth)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 	}
 
@@ -500,7 +511,7 @@ func (b *Bank) TxDetail(txHash string) (*Txs, error) {
 	if ok {
 		err := b.ParserCosmosMsg(txs, msgBankSend)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 	}
 

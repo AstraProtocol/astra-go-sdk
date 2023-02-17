@@ -430,7 +430,7 @@ func (suite *AstraSdkTestSuite) TestScanner() {
 	c := suite.Client.NewScanner(bankClient)
 	//listTx, err := c.ScanByBlockHeight(2040457) //cosmos
 	//listTx, err := c.ScanByBlockHeight(1871260) //erc20
-	listTx, err := c.ScanByBlockHeight(4248357) //erc20
+	listTx, err := c.ScanByBlockHeight(906319) //erc20
 	if err != nil {
 		panic(err)
 	}

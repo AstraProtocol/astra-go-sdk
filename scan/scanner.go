@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/AstraProtocol/astra-go-sdk/bank"
+	"github.com/AstraProtocol/astra-go-sdk/config"
 	"github.com/cosmos/cosmos-sdk/client"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
@@ -23,7 +24,7 @@ func NewScanner(rpcClient client.Context, bank *bank.Bank) *Scanner {
 }
 
 func (b *Scanner) ScanViaWebsocket() {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), config.ReqTimeout*time.Second)
 	defer cancel()
 
 	subscription := b.rpcClient.Client
@@ -160,7 +161,10 @@ func (b *Scanner) getBlock(height *int64) (*ctypes.ResultBlock, *ctypes.ResultBl
 		return nil, nil, err
 	}
 
-	res, err := node.Block(context.Background(), height)
+	ctx, cancel := context.WithTimeout(context.Background(), config.ReqTimeout*time.Second)
+	defer cancel()
+
+	res, err := node.Block(ctx, height)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -181,7 +185,10 @@ func (b *Scanner) GetChainHeight() (int64, error) {
 		return -1, err
 	}
 
-	status, err := node.Status(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), config.ReqTimeout*time.Second)
+	defer cancel()
+
+	status, err := node.Status(ctx)
 	if err != nil {
 		return -1, err
 	}

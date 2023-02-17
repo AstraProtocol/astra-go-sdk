@@ -13,6 +13,7 @@ import (
 	"github.com/evmos/ethermint/encoding"
 	ethermintTypes "github.com/evmos/ethermint/types"
 	"github.com/evmos/evmos/v6/app"
+	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
 )
 
 type Client struct {
@@ -27,11 +28,11 @@ func (c *Client) RpcClient() sdkClient.Context {
 
 func NewClient(cfg *config.Config) *Client {
 	cli := new(Client)
-	cli.Init(cfg)
+	cli.init(cfg)
 	return cli
 }
 
-func (c *Client) Init(cfg *config.Config) {
+func (c *Client) init(cfg *config.Config) {
 	c.prefixAddress = cfg.PrefixAddress
 	c.tokenSymbol = cfg.TokenSymbol
 
@@ -51,19 +52,20 @@ func (c *Client) Init(cfg *config.Config) {
 	sdkConfig.SetBech32PrefixForConsensusNode(bech32PrefixConsAddr, bech32PrefixConsPub)
 
 	ar := authTypes.AccountRetriever{}
+	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
 
 	//github.com/cosmos/cosmos-sdk/simapp/app.go
 	//github.com/evmos/ethermint@v0.19.0/app/app.go -> selected
-	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
-	rpcHttp, err := sdkClient.NewClientFromNode(cfg.Endpoint)
+	rpcHttp, err := rpchttp.NewWithTimeout(cfg.Endpoint, "/websocket", 120)
 	if err != nil {
+		fmt.Println("rpc http error ", err.Error())
 		panic(err)
 	}
 
 	rpcClient := sdkClient.Context{}
 	rpcClient = rpcClient.
 		WithClient(rpcHttp).
-		//WithNodeURI(cfg.Endpoint).
+		WithNodeURI(cfg.Endpoint).
 		WithCodec(encodingConfig.Marshaler).
 		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).
 		WithTxConfig(encodingConfig.TxConfig).

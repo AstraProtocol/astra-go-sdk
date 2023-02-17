@@ -1,5 +1,7 @@
 package config
 
+const ReqTimeout = 5
+
 type Config struct {
 	ChainId       string `json:"chain_id,omitempty"`
 	Endpoint      string `json:"endpoint,omitempty"`

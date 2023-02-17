@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/AstraProtocol/astra-go-sdk/config"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 	cryptoTypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -163,7 +164,7 @@ func ConvertToDecimal(amount string, decimal int) (float64, error) {
 }
 
 func Simulate(client client.Context, txByte []byte) (uint64, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*60))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*config.ReqTimeout))
 	defer cancel()
 
 	txSvcClient := tx.NewServiceClient(client)
