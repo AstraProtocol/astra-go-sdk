@@ -17,9 +17,10 @@ type Tx struct {
 	txf        tx.Factory
 	privateKey *account.PrivateKeySerialized
 	rpcClient  client.Context
+	ctx        context.Context
 }
 
-func NewTx(rpcClient client.Context, privateKey *account.PrivateKeySerialized, gasLimit uint64, gasPrice string) *Tx {
+func NewTx(rpcClient client.Context, ctx context.Context, privateKey *account.PrivateKeySerialized, gasLimit uint64, gasPrice string) *Tx {
 	txf := tx.Factory{}.
 		WithChainID(rpcClient.ChainID).
 		WithTxConfig(rpcClient.TxConfig).
@@ -28,7 +29,7 @@ func NewTx(rpcClient client.Context, privateKey *account.PrivateKeySerialized, g
 		WithSignMode(rpcClient.TxConfig.SignModeHandler().DefaultMode())
 	//.SetTimeoutHeight(txf.TimeoutHeight())
 
-	return &Tx{txf: txf, privateKey: privateKey, rpcClient: rpcClient}
+	return &Tx{txf: txf, privateKey: privateKey, rpcClient: rpcClient, ctx: ctx}
 }
 
 func (t *Tx) BuildUnsignedTx(msgs types.Msg) (client.TxBuilder, error) {
@@ -63,7 +64,7 @@ func (t *Tx) prepareSignTx() error {
 
 		hexAddress := common.BytesToAddress(t.privateKey.PublicKey().Address().Bytes())
 		queryClient := emvTypes.NewQueryClient(t.rpcClient)
-		cosmosAccount, err := queryClient.CosmosAccount(context.Background(), &emvTypes.QueryCosmosAccountRequest{Address: hexAddress.String()})
+		cosmosAccount, err := queryClient.CosmosAccount(t.ctx, &emvTypes.QueryCosmosAccountRequest{Address: hexAddress.String()})
 		if err != nil {
 			return errors.Wrap(err, "CosmosAccount")
 		}

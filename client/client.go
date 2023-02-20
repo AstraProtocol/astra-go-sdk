@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"github.com/AstraProtocol/astra-go-sdk/account"
 	"github.com/AstraProtocol/astra-go-sdk/bank"
@@ -20,6 +21,7 @@ type Client struct {
 	prefixAddress string
 	tokenSymbol   string
 	rpcClient     sdkClient.Context
+	ctx           context.Context
 }
 
 func (c *Client) RpcClient() sdkClient.Context {
@@ -62,10 +64,14 @@ func (c *Client) init(cfg *config.Config) {
 		panic(err)
 	}
 
+	var ctx = context.Background()
+
+	c.ctx = ctx
+
 	rpcClient := sdkClient.Context{}
 	rpcClient = rpcClient.
 		WithClient(rpcHttp).
-		WithNodeURI(cfg.Endpoint).
+		//WithNodeURI(cfg.Endpoint).
 		WithCodec(encodingConfig.Marshaler).
 		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).
 		WithTxConfig(encodingConfig.TxConfig).
@@ -82,9 +88,9 @@ func (c *Client) NewAccountClient() *account.Account {
 }
 
 func (c *Client) NewBankClient() *bank.Bank {
-	return bank.NewBank(c.rpcClient, c.tokenSymbol)
+	return bank.NewBank(c.rpcClient, c.tokenSymbol, c.ctx)
 }
 
 func (c *Client) NewScanner(bank *bank.Bank) *scan.Scanner {
-	return scan.NewScanner(c.rpcClient, bank)
+	return scan.NewScanner(c.rpcClient, bank, c.ctx)
 }
