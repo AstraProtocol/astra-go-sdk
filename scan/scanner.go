@@ -16,10 +16,11 @@ import (
 type Scanner struct {
 	rpcClient client.Context
 	bank      *bank.Bank
+	ctx       context.Context
 }
 
-func NewScanner(rpcClient client.Context, bank *bank.Bank) *Scanner {
-	return &Scanner{rpcClient: rpcClient, bank: bank}
+func NewScanner(rpcClient client.Context, bank *bank.Bank, ctx context.Context) *Scanner {
+	return &Scanner{rpcClient: rpcClient, bank: bank, ctx: ctx}
 }
 
 func (b *Scanner) ScanViaWebsocket() {
@@ -34,7 +35,7 @@ func (b *Scanner) ScanViaWebsocket() {
 	queryStr := fmt.Sprintf("tm.event='NewBlock' AND block.height='1038312'")
 	fmt.Println(queryStr)
 	blockHeadersSub, err := subscription.Subscribe(
-		context.Background(),
+		b.ctx,
 		"test-client",
 		queryStr,
 	)
@@ -142,7 +143,7 @@ func (b *Scanner) getBlockResults(height *int64) (*ctypes.ResultBlockResults, er
 		return nil, err
 	}
 
-	res, err := node.BlockResults(context.Background(), height)
+	res, err := node.BlockResults(b.ctx, height)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +158,7 @@ func (b *Scanner) getBlock(height *int64) (*ctypes.ResultBlock, *ctypes.ResultBl
 		return nil, nil, err
 	}
 
-	res, err := node.Block(context.Background(), height)
+	res, err := node.Block(b.ctx, height)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -178,7 +179,7 @@ func (b *Scanner) GetChainHeight() (int64, error) {
 		return -1, err
 	}
 
-	status, err := node.Status(context.Background())
+	status, err := node.Status(b.ctx)
 	if err != nil {
 		return -1, err
 	}

@@ -22,9 +22,10 @@ type TxMulSign struct {
 	txf              tx.Factory
 	signerPrivateKey *account.PrivateKeySerialized
 	rpcClient        client.Context
+	ctx              context.Context
 }
 
-func NewTxMulSign(rpcClient client.Context, privateKey *account.PrivateKeySerialized, gasLimit uint64, gasPrice string, sequenNum, accNum uint64) *TxMulSign {
+func NewTxMulSign(rpcClient client.Context, ctx context.Context, privateKey *account.PrivateKeySerialized, gasLimit uint64, gasPrice string, sequenNum, accNum uint64) *TxMulSign {
 	txf := tx.Factory{}.
 		WithChainID(rpcClient.ChainID).
 		WithTxConfig(rpcClient.TxConfig).
@@ -35,7 +36,7 @@ func NewTxMulSign(rpcClient client.Context, privateKey *account.PrivateKeySerial
 		WithSignMode(signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON)
 	//.SetTimeoutHeight(txf.TimeoutHeight())
 
-	return &TxMulSign{txf: txf, signerPrivateKey: privateKey, rpcClient: rpcClient}
+	return &TxMulSign{txf: txf, signerPrivateKey: privateKey, rpcClient: rpcClient, ctx: ctx}
 }
 
 func (t *TxMulSign) BuildUnsignedTx(msgs types.Msg) (client.TxBuilder, error) {
@@ -71,7 +72,7 @@ func (t *TxMulSign) prepareSignTx(pubKey cryptoTypes.PubKey) error {
 		hexAddress := common.BytesToAddress(pubKey.Address().Bytes())
 
 		queryClient := emvTypes.NewQueryClient(t.rpcClient)
-		cosmosAccount, err := queryClient.CosmosAccount(context.Background(), &emvTypes.QueryCosmosAccountRequest{Address: hexAddress.String()})
+		cosmosAccount, err := queryClient.CosmosAccount(t.ctx, &emvTypes.QueryCosmosAccountRequest{Address: hexAddress.String()})
 		if err != nil {
 			return errors.Wrap(err, "CosmosAccount")
 		}

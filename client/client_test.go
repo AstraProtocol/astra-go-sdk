@@ -86,7 +86,7 @@ func (suite *AstraSdkTestSuite) TestGenMulSignAccount() {
 func (suite *AstraSdkTestSuite) TestTransfer() {
 	bankClient := suite.Client.NewBankClient()
 
-	amount := big.NewInt(0).Mul(big.NewInt(100), big.NewInt(0).SetUint64(uint64(math.Pow10(18))))
+	amount := big.NewInt(0).Mul(big.NewInt(4), big.NewInt(0).SetUint64(uint64(math.Pow10(18))))
 	fmt.Println("amount", amount.String())
 
 	request := &bank.TransferRequest{
@@ -430,13 +430,21 @@ func (suite *AstraSdkTestSuite) TestScanner() {
 	c := suite.Client.NewScanner(bankClient)
 	//listTx, err := c.ScanByBlockHeight(2040457) //cosmos
 	//listTx, err := c.ScanByBlockHeight(1871260) //erc20
-	listTx, err := c.ScanByBlockHeight(906319) //erc20
+	listTx, err := c.ScanByBlockHeight(980684) //erc20
 	if err != nil {
 		panic(err)
 	}
 
 	rs, _ := json.MarshalIndent(listTx, " ", " ")
 	fmt.Println(string(rs))
+
+	height, err := c.GetChainHeight() //erc20
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(height)
 }
 
 func (suite *AstraSdkTestSuite) TestGetTxDetail() {
