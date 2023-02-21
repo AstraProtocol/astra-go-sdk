@@ -56,6 +56,19 @@ func (suite *AstraSdkTestSuite) TestInitBank() {
 	fmt.Println(balance.String())
 }
 
+func (suite *AstraSdkTestSuite) TestGetAccountRetriever() {
+	bankClient := suite.Client.NewBankClient()
+	accNum, accSeq, err := bankClient.AccountRetriever("0x9cc92bd19df168539ba7c73b450db998b0e79761")
+	if err != nil {
+		panic(err)
+	}
+
+	suite.Equal(uint64(210), accNum)
+
+	fmt.Println(accNum)
+	fmt.Println(accSeq)
+}
+
 func (suite *AstraSdkTestSuite) TestGenAccount() {
 	accClient := suite.Client.NewAccountClient()
 	acc, err := accClient.CreateAccount()
@@ -470,17 +483,6 @@ func (suite *AstraSdkTestSuite) TestBaseFee() {
 	}
 
 	fmt.Println(rs)
-}
-
-func (suite *AstraSdkTestSuite) TestGetAccountRetriever() {
-	bankClient := suite.Client.NewBankClient()
-	accNum, accSeq, err := bankClient.AccountRetriever("0x661276b8c832da06c709dbc2b0c063e2f1d25ef9")
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println(accNum)
-	fmt.Println(accSeq)
 }
 
 func (suite *AstraSdkTestSuite) TestSequenceNumberFromPk() {

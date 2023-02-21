@@ -176,12 +176,12 @@ func (b *Scanner) getBlock(height *int64) (*ctypes.ResultBlock, *ctypes.ResultBl
 func (b *Scanner) GetChainHeight() (int64, error) {
 	node, err := b.rpcClient.GetNode()
 	if err != nil {
-		return -1, err
+		return -1, errors.Wrap(err, "GetNode")
 	}
 
 	status, err := node.Status(b.ctx)
 	if err != nil {
-		return -1, err
+		return -1, errors.Wrap(err, "Status")
 	}
 
 	height := status.SyncInfo.LatestBlockHeight
