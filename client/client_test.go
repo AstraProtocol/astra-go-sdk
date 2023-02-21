@@ -16,6 +16,7 @@ import (
 	"math"
 	"math/big"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -351,7 +352,7 @@ func (suite *AstraSdkTestSuite) TestAddressValid() {
 
 func (suite *AstraSdkTestSuite) TestConvertHexToCosmosAddress() {
 	eth := "0x9cc92bd19df168539ba7c73b450db998b0e79761"
-	cosmos := "astra13cqqztgdf3l0sn9fvm0n7v4xjkj5luha3zd4yq"
+	cosmos := "astra1nnyjh5va79598xa8cua52rdenzcw09mpwfekts"
 
 	rs, _ := common.EthAddressToCosmosAddress(eth)
 	fmt.Println(rs)
@@ -359,7 +360,7 @@ func (suite *AstraSdkTestSuite) TestConvertHexToCosmosAddress() {
 
 	rs1, _ := common.CosmosAddressToEthAddress(cosmos)
 	fmt.Println(rs1)
-	assert.Equal(suite.T(), eth, rs1)
+	assert.Equal(suite.T(), strings.ToLower(eth), strings.ToLower(rs1))
 }
 
 func (suite *AstraSdkTestSuite) TestCheckTx() {
@@ -404,10 +405,9 @@ func (suite *AstraSdkTestSuite) TestImportAccountViaHdPath() {
 
 func (suite *AstraSdkTestSuite) TestImportByNmemonic() {
 	accClient := suite.Client.NewAccountClient()
-	nmemonic := ""
+	nmemonic := "secret immense amount trial polar security mother scare useful hen squeeze confirm right size best trash team clock matter grow copy quiz capital ill"
 
 	key, err := accClient.ImportAccount(nmemonic)
-
 	if err != nil {
 		panic(err)
 	}
@@ -449,7 +449,7 @@ func (suite *AstraSdkTestSuite) TestScanner() {
 
 func (suite *AstraSdkTestSuite) TestGetTxDetail() {
 	bankClient := suite.Client.NewBankClient()
-	rs, err := bankClient.TxDetail("0995F4341970E12BFE5FA958ABD2A373022C78AB19D700B1F8E01C9DA8DC0CAA")
+	rs, err := bankClient.TxDetail("6189C4A43589AE7EE96D69BF1114B3BA83E427E8149CD7758FF0D8BCF8F05E49")
 
 	if err != nil {
 		panic(err)

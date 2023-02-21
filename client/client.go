@@ -13,6 +13,7 @@ import (
 	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/evmos/ethermint/encoding"
 	ethermintTypes "github.com/evmos/ethermint/types"
+	emvTypes "github.com/evmos/ethermint/x/evm/types"
 	"github.com/evmos/evmos/v6/app"
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
 )
@@ -22,6 +23,7 @@ type Client struct {
 	tokenSymbol   string
 	rpcClient     sdkClient.Context
 	ctx           context.Context
+	queryClient   emvTypes.QueryClient
 }
 
 func (c *Client) RpcClient() sdkClient.Context {
@@ -65,7 +67,6 @@ func (c *Client) init(cfg *config.Config) {
 	}
 
 	var ctx = context.Background()
-
 	c.ctx = ctx
 
 	rpcClient := sdkClient.Context{}
@@ -81,6 +82,7 @@ func (c *Client) init(cfg *config.Config) {
 		WithBroadcastMode(flags.BroadcastSync)
 
 	c.rpcClient = rpcClient
+	c.queryClient = emvTypes.NewQueryClient(rpcClient)
 }
 
 func (c *Client) NewAccountClient() *account.Account {
@@ -88,7 +90,7 @@ func (c *Client) NewAccountClient() *account.Account {
 }
 
 func (c *Client) NewBankClient() *bank.Bank {
-	return bank.NewBank(c.rpcClient, c.tokenSymbol, c.ctx)
+	return bank.NewBank(c.rpcClient, c.tokenSymbol, c.ctx, c.queryClient)
 }
 
 func (c *Client) NewScanner(bank *bank.Bank) *scan.Scanner {
