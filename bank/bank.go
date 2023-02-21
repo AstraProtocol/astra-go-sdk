@@ -25,10 +25,11 @@ type Bank struct {
 	rpcClient   client.Context
 	tokenSymbol string
 	ctx         context.Context
+	queryClient emvTypes.QueryClient
 }
 
-func NewBank(rpcClient client.Context, tokenSymbol string, ctx context.Context) *Bank {
-	return &Bank{rpcClient: rpcClient, tokenSymbol: tokenSymbol, ctx: ctx}
+func NewBank(rpcClient client.Context, tokenSymbol string, ctx context.Context, queryClient emvTypes.QueryClient) *Bank {
+	return &Bank{rpcClient: rpcClient, tokenSymbol: tokenSymbol, ctx: ctx, queryClient: queryClient}
 }
 
 func (b *Bank) Balance(addr string) (*big.Int, error) {
@@ -39,8 +40,7 @@ func (b *Bank) Balance(addr string) (*big.Int, error) {
 		return nil, errors.Wrap(err, "Balance")
 	}
 
-	bankClient := emvTypes.NewQueryClient(b.rpcClient)
-	bankRes, err := bankClient.Balance(
+	bankRes, err := b.queryClient.Balance(
 		b.ctx,
 		&emvTypes.QueryBalanceRequest{Address: ethAddr},
 		grpc.Header(&header),
@@ -59,8 +59,7 @@ func (b *Bank) Balance(addr string) (*big.Int, error) {
 }
 
 func (b *Bank) AccountRetriever(addr string) (uint64, uint64, error) {
-	queryClient := emvTypes.NewQueryClient(b.rpcClient)
-	cosmosAccount, err := queryClient.CosmosAccount(b.ctx, &emvTypes.QueryCosmosAccountRequest{Address: addr})
+	cosmosAccount, err := b.queryClient.CosmosAccount(b.ctx, &emvTypes.QueryCosmosAccountRequest{Address: addr})
 	if err != nil {
 		return 0, 0, errors.Wrap(err, "CosmosAccount")
 	}
@@ -72,10 +71,8 @@ func (b *Bank) AccountRetriever(addr string) (uint64, uint64, error) {
 }
 
 func (b *Bank) BaseFee() (string, error) {
-	queryClient := emvTypes.NewQueryClient(b.rpcClient)
-
 	expRes := &emvTypes.QueryBaseFeeRequest{}
-	baseFee, err := queryClient.BaseFee(b.ctx, expRes)
+	baseFee, err := b.queryClient.BaseFee(b.ctx, expRes)
 	if err != nil {
 		return "0", errors.Wrap(err, "BaseFee")
 	}
@@ -124,7 +121,7 @@ func (b *Bank) TransferRawData(param *TransferRequest) (client.TxBuilder, error)
 		return nil, errors.Wrap(err, "BaseFee")
 	}*/
 
-	newTx := common.NewTx(b.rpcClient, b.ctx, acc, param.GasLimit, param.GasPrice)
+	newTx := common.NewTx(b.rpcClient, b.ctx, b.queryClient, acc, param.GasLimit, param.GasPrice)
 
 	txBuilder, err := newTx.BuildUnsignedTx(msg)
 	if err != nil {
@@ -190,7 +187,7 @@ func (b *Bank) TransferRawDataWithPrivateKey(param *TransferRequest) (client.TxB
 		return nil, errors.Wrap(err, "BaseFee")
 	}*/
 
-	newTx := common.NewTx(b.rpcClient, b.ctx, acc, param.GasLimit, param.GasPrice)
+	newTx := common.NewTx(b.rpcClient, b.ctx, b.queryClient, acc, param.GasLimit, param.GasPrice)
 
 	txBuilder, err := newTx.BuildUnsignedTx(msg)
 	if err != nil {
@@ -255,6 +252,7 @@ func (b *Bank) SignTxWithSignerAddress(param *SignTxWithSignerAddressRequest) (c
 	newTx := common.NewTxMulSign(
 		b.rpcClient,
 		b.ctx,
+		b.queryClient,
 		privateKey,
 		param.GasLimit,
 		param.GasPrice,
@@ -293,6 +291,7 @@ func (b *Bank) TransferMultiSignRawData(param *TransferMultiSignRequest) (client
 	newTx := common.NewTxMulSign(
 		b.rpcClient,
 		b.ctx,
+		b.queryClient,
 		nil,
 		param.GasLimit,
 		param.GasPrice,
