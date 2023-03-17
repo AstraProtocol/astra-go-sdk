@@ -6,6 +6,7 @@ import (
 	"github.com/AstraProtocol/astra-go-sdk/bank"
 	"github.com/AstraProtocol/astra-go-sdk/common"
 	"github.com/AstraProtocol/astra-go-sdk/config"
+	"github.com/AstraProtocol/astra-go-sdk/validator"
 	"github.com/cosmos/cosmos-sdk/types"
 	signingTypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	ethCommon "github.com/ethereum/go-ethereum/common"
@@ -48,7 +49,7 @@ func TestAstraSdkTestSuite(t *testing.T) {
 
 func (suite *AstraSdkTestSuite) TestInitBank() {
 	bankClient := suite.Client.NewBankClient()
-	balance, err := bankClient.Balance("astra1p6sscujfpygmrrxqlwqeqqw6r5lxk2x9gz9glh")
+	balance, err := bankClient.Balance("astra1vcf8dwxgxtdqd3cfm0ptpsrrutcayhhex84e5k")
 	if err != nil {
 		panic(err)
 	}
@@ -462,7 +463,7 @@ func (suite *AstraSdkTestSuite) TestScanner() {
 
 func (suite *AstraSdkTestSuite) TestGetTxDetail() {
 	bankClient := suite.Client.NewBankClient()
-	rs, err := bankClient.TxDetail("6189C4A43589AE7EE96D69BF1114B3BA83E427E8149CD7758FF0D8BCF8F05E49")
+	rs, err := bankClient.TxDetail("C78936CBD8FE3F72684B7471E2E9BD3E6B5E5FA4ED9A2FA6A9CEAECE79F61BF1")
 
 	if err != nil {
 		panic(err)
@@ -509,4 +510,142 @@ func (suite *AstraSdkTestSuite) TestConvertToDecimal() {
 	amount, err := common.ConvertToDecimal("740000000000", 18)
 	fmt.Println(err)
 	fmt.Println(amount)
+}
+
+func (suite *AstraSdkTestSuite) TestDelegate() {
+	validatorClient := suite.Client.NewValidator()
+
+	amount := big.NewInt(0).Mul(big.NewInt(40), big.NewInt(0).SetUint64(uint64(math.Pow10(18))))
+	fmt.Println("amount", amount.String())
+
+	params := &validator.DelegateRequest{
+		PrivateKey:    "valve season sauce knife burden benefit zone field ask carpet fury vital action donate trade street ability artwork ball uniform garbage sugar warm differ",
+		ValidatorAddr: "astravaloper1wey5kg6w2sawn35uy86qlfdwzswrcs0jrz88tf",
+		DelegateAddr:  "astra19qeu7ka382z7pr5kektpg9p49kdjh2u8el2u7f",
+		Amount:        amount,
+		GasLimit:      300000,
+		GasPrice:      "10000000000000aastra",
+	}
+
+	txBuilder, err := validatorClient.Delegate(params)
+	if err != nil {
+		panic(err)
+	}
+
+	txJson, err := common.TxBuilderJsonEncoder(suite.Client.rpcClient.TxConfig, txBuilder)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("rawData", txJson)
+
+	txByte, err := common.TxBuilderJsonDecoder(suite.Client.rpcClient.TxConfig, txJson)
+	if err != nil {
+		panic(err)
+	}
+
+	txHash := common.TxHash(txByte)
+	fmt.Println("txHash", txHash)
+
+	fmt.Println(ethCommon.BytesToHash(txByte).String())
+
+	res, err := suite.Client.rpcClient.BroadcastTxSync(txByte)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(res)
+}
+
+func (suite *AstraSdkTestSuite) TestReDelegate() {
+	validatorClient := suite.Client.NewValidator()
+
+	amount := big.NewInt(0).Mul(big.NewInt(20), big.NewInt(0).SetUint64(uint64(math.Pow10(18))))
+	fmt.Println("amount", amount.String())
+
+	params := &validator.ReDelegateRequest{
+		PrivateKey:        "valve season sauce knife burden benefit zone field ask carpet fury vital action donate trade street ability artwork ball uniform garbage sugar warm differ",
+		FromValidatorAddr: "astravaloper1wey5kg6w2sawn35uy86qlfdwzswrcs0jrz88tf",
+		ToValidatorAddr:   "astravaloper1u7gf4z49v53yrxy6ggrzhxfqj46c3ap4tzku46",
+		DelegateAddr:      "astra19qeu7ka382z7pr5kektpg9p49kdjh2u8el2u7f",
+		Amount:            amount,
+		GasLimit:          400000,
+		GasPrice:          "10000000000000aastra",
+	}
+
+	txBuilder, err := validatorClient.ReDelegate(params)
+	if err != nil {
+		panic(err)
+	}
+
+	txJson, err := common.TxBuilderJsonEncoder(suite.Client.rpcClient.TxConfig, txBuilder)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("rawData", txJson)
+
+	txByte, err := common.TxBuilderJsonDecoder(suite.Client.rpcClient.TxConfig, txJson)
+	if err != nil {
+		panic(err)
+	}
+
+	txHash := common.TxHash(txByte)
+	fmt.Println("txHash", txHash)
+
+	fmt.Println(ethCommon.BytesToHash(txByte).String())
+
+	res, err := suite.Client.rpcClient.BroadcastTxSync(txByte)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(res)
+}
+
+func (suite *AstraSdkTestSuite) TestUnDelegate() {
+	validatorClient := suite.Client.NewValidator()
+
+	amount := big.NewInt(0).Mul(big.NewInt(1000),
+		big.NewInt(0).SetUint64(uint64(math.Pow10(18))))
+
+	fmt.Println("amount", amount.String())
+
+	params := &validator.DelegateRequest{
+		PrivateKey:    "valve season sauce knife burden benefit zone field ask carpet fury vital action donate trade street ability artwork ball uniform garbage sugar warm differ",
+		DelegateAddr:  "astra19qeu7ka382z7pr5kektpg9p49kdjh2u8el2u7f",
+		ValidatorAddr: "astravaloper1u7gf4z49v53yrxy6ggrzhxfqj46c3ap4tzku46",
+		Amount:        amount,
+		GasLimit:      300000,
+		GasPrice:      "10000000000000aastra",
+	}
+
+	txBuilder, err := validatorClient.UnDelegate(params)
+	if err != nil {
+		panic(err)
+	}
+
+	txJson, err := common.TxBuilderJsonEncoder(suite.Client.rpcClient.TxConfig, txBuilder)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("rawData", txJson)
+
+	txByte, err := common.TxBuilderJsonDecoder(suite.Client.rpcClient.TxConfig, txJson)
+	if err != nil {
+		panic(err)
+	}
+
+	txHash := common.TxHash(txByte)
+	fmt.Println("txHash", txHash)
+
+	fmt.Println(ethCommon.BytesToHash(txByte).String())
+
+	res, err := suite.Client.rpcClient.BroadcastTxSync(txByte)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(res)
 }

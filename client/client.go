@@ -7,6 +7,7 @@ import (
 	"github.com/AstraProtocol/astra-go-sdk/bank"
 	"github.com/AstraProtocol/astra-go-sdk/config"
 	"github.com/AstraProtocol/astra-go-sdk/scan"
+	"github.com/AstraProtocol/astra-go-sdk/validator"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/types"
@@ -95,4 +96,8 @@ func (c *Client) NewBankClient() *bank.Bank {
 
 func (c *Client) NewScanner(bank *bank.Bank) *scan.Scanner {
 	return scan.NewScanner(c.rpcClient, bank, c.ctx)
+}
+
+func (c *Client) NewValidator() *validator.Validator {
+	return validator.NewValidator(c.ctx, c.rpcClient, c.queryClient, c.tokenSymbol)
 }
