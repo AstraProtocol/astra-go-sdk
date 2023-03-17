@@ -557,6 +557,47 @@ func (suite *AstraSdkTestSuite) TestDelegate() {
 	fmt.Println(res)
 }
 
+func (suite *AstraSdkTestSuite) TestDelegateClaimReward() {
+	validatorClient := suite.Client.NewValidator()
+
+	params := &validator.DelegateRequest{
+		PrivateKey:    "valve season sauce knife burden benefit zone field ask carpet fury vital action donate trade street ability artwork ball uniform garbage sugar warm differ",
+		ValidatorAddr: "astravaloper1wey5kg6w2sawn35uy86qlfdwzswrcs0jrz88tf",
+		DelegateAddr:  "astra19qeu7ka382z7pr5kektpg9p49kdjh2u8el2u7f",
+		GasLimit:      300000,
+		GasPrice:      "10000000000000aastra",
+	}
+
+	txBuilder, err := validatorClient.DelegateClaimReward(params)
+	if err != nil {
+		panic(err)
+	}
+
+	txJson, err := common.TxBuilderJsonEncoder(suite.Client.rpcClient.TxConfig, txBuilder)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("rawData", txJson)
+
+	txByte, err := common.TxBuilderJsonDecoder(suite.Client.rpcClient.TxConfig, txJson)
+	if err != nil {
+		panic(err)
+	}
+
+	txHash := common.TxHash(txByte)
+	fmt.Println("txHash", txHash)
+
+	fmt.Println(ethCommon.BytesToHash(txByte).String())
+
+	res, err := suite.Client.rpcClient.BroadcastTxSync(txByte)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(res)
+}
+
 func (suite *AstraSdkTestSuite) TestReDelegate() {
 	validatorClient := suite.Client.NewValidator()
 
@@ -606,7 +647,7 @@ func (suite *AstraSdkTestSuite) TestReDelegate() {
 func (suite *AstraSdkTestSuite) TestUnDelegate() {
 	validatorClient := suite.Client.NewValidator()
 
-	amount := big.NewInt(0).Mul(big.NewInt(1000),
+	amount := big.NewInt(0).Mul(big.NewInt(400000),
 		big.NewInt(0).SetUint64(uint64(math.Pow10(18))))
 
 	fmt.Println("amount", amount.String())
@@ -614,7 +655,7 @@ func (suite *AstraSdkTestSuite) TestUnDelegate() {
 	params := &validator.DelegateRequest{
 		PrivateKey:    "valve season sauce knife burden benefit zone field ask carpet fury vital action donate trade street ability artwork ball uniform garbage sugar warm differ",
 		DelegateAddr:  "astra19qeu7ka382z7pr5kektpg9p49kdjh2u8el2u7f",
-		ValidatorAddr: "astravaloper1u7gf4z49v53yrxy6ggrzhxfqj46c3ap4tzku46",
+		ValidatorAddr: "astravaloper1wey5kg6w2sawn35uy86qlfdwzswrcs0jrz88tf",
 		Amount:        amount,
 		GasLimit:      300000,
 		GasPrice:      "10000000000000aastra",
@@ -648,4 +689,15 @@ func (suite *AstraSdkTestSuite) TestUnDelegate() {
 	}
 
 	fmt.Println(res)
+}
+
+func (suite *AstraSdkTestSuite) TestDelegationTotalRewards() {
+	validatorClient := suite.Client.NewValidator()
+	reward, total, err := validatorClient.DelegationTotalRewards("astra19qeu7ka382z7pr5kektpg9p49kdjh2u8el2u7f")
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(reward)
+	fmt.Println(total)
 }

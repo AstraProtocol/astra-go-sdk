@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/types"
 	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	distributionTypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/evmos/ethermint/encoding"
 	ethermintTypes "github.com/evmos/ethermint/types"
 	emvTypes "github.com/evmos/ethermint/x/evm/types"
@@ -20,11 +21,12 @@ import (
 )
 
 type Client struct {
-	prefixAddress string
-	tokenSymbol   string
-	rpcClient     sdkClient.Context
-	ctx           context.Context
-	queryClient   emvTypes.QueryClient
+	prefixAddress        string
+	tokenSymbol          string
+	rpcClient            sdkClient.Context
+	ctx                  context.Context
+	queryClient          emvTypes.QueryClient
+	queryValidatorClient distributionTypes.QueryClient
 }
 
 func (c *Client) RpcClient() sdkClient.Context {
@@ -84,6 +86,7 @@ func (c *Client) init(cfg *config.Config) {
 
 	c.rpcClient = rpcClient
 	c.queryClient = emvTypes.NewQueryClient(rpcClient)
+	c.queryValidatorClient = distributionTypes.NewQueryClient(rpcClient)
 }
 
 func (c *Client) NewAccountClient() *account.Account {
@@ -99,5 +102,5 @@ func (c *Client) NewScanner(bank *bank.Bank) *scan.Scanner {
 }
 
 func (c *Client) NewValidator() *validator.Validator {
-	return validator.NewValidator(c.ctx, c.rpcClient, c.queryClient, c.tokenSymbol)
+	return validator.NewValidator(c.ctx, c.rpcClient, c.queryClient, c.queryValidatorClient, c.tokenSymbol)
 }
