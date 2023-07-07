@@ -17,6 +17,7 @@ import (
 	ethermintTypes "github.com/evmos/ethermint/types"
 	emvTypes "github.com/evmos/ethermint/x/evm/types"
 	"github.com/evmos/evmos/v6/app"
+	vestingTypes "github.com/evmos/evmos/v6/x/vesting/types"
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
 )
 
@@ -27,6 +28,7 @@ type Client struct {
 	ctx                  context.Context
 	queryClient          emvTypes.QueryClient
 	queryValidatorClient distributionTypes.QueryClient
+	queryVestingClient   vestingTypes.QueryClient
 }
 
 func (c *Client) RpcClient() sdkClient.Context {
@@ -87,6 +89,7 @@ func (c *Client) init(cfg *config.Config) {
 	c.rpcClient = rpcClient
 	c.queryClient = emvTypes.NewQueryClient(rpcClient)
 	c.queryValidatorClient = distributionTypes.NewQueryClient(rpcClient)
+	c.queryVestingClient = vestingTypes.NewQueryClient(rpcClient)
 }
 
 func (c *Client) NewAccountClient() *account.Account {
@@ -103,4 +106,8 @@ func (c *Client) NewScanner(bank *bank.Bank) *scan.Scanner {
 
 func (c *Client) NewValidator() *validator.Validator {
 	return validator.NewValidator(c.ctx, c.rpcClient, c.queryClient, c.queryValidatorClient, c.tokenSymbol)
+}
+
+func (c *Client) NewVesting() vestingTypes.QueryClient {
+	return c.queryVestingClient
 }

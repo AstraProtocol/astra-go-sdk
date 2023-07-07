@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/AstraProtocol/astra-go-sdk/bank"
@@ -9,7 +10,10 @@ import (
 	"github.com/AstraProtocol/astra-go-sdk/validator"
 	"github.com/cosmos/cosmos-sdk/types"
 	signingTypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	sdkvesting "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	ethCommon "github.com/ethereum/go-ethereum/common"
+	vestingTypes "github.com/evmos/evmos/v6/x/vesting/types"
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -19,6 +23,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 type AstraSdkTestSuite struct {
@@ -700,4 +705,61 @@ func (suite *AstraSdkTestSuite) TestDelegationTotalRewards() {
 
 	fmt.Println(reward)
 	fmt.Println(total)
+}
+
+func (suite *AstraSdkTestSuite) TestGetLockTokenVesting() {
+	vestingClient := suite.Client.NewVesting()
+
+	addressVesting := ""
+
+	req := &vestingTypes.QueryBalancesRequest{
+		Address: addressVesting,
+	}
+
+	res, err := vestingClient.Balances(context.Background(), req)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(fmt.Sprintf("Locked: %s\nUnvested: %s\nVested: %s\n", res.Locked, res.Unvested, res.Vested))
+
+	stakeDenom := "aastra"
+	now, _ := time.Parse("2006-01-02T15:04:05Z", "2023-01-01T00:00:00Z")
+
+	unvested, _ := big.NewInt(0).SetString("1000", 10)
+
+	unvestedPeriods := sdkvesting.Periods{
+		sdkvesting.Period{
+			Length: int64(16 * 60 * 60),
+			Amount: types.NewCoins(
+				types.NewCoin(stakeDenom, types.NewIntFromBigInt(unvested)),
+			),
+		},
+	}
+
+	vesting, _ := big.NewInt(0).SetString("1000", 10)
+	vestingPeriods := sdkvesting.Periods{
+		sdkvesting.Period{
+			Length: int64(12 * 60 * 60), Amount: types.Coins{
+				types.NewCoin(stakeDenom, types.NewIntFromBigInt(vesting)),
+			},
+		},
+	}
+
+	origin, _ := big.NewInt(0).SetString("1000", 10)
+	origCoins := types.Coins{
+		types.NewCoin(stakeDenom, types.NewIntFromBigInt(origin)),
+	}
+
+	bacc := authtypes.NewBaseAccountWithAddress(types.AccAddress(addressVesting))
+	va := vestingTypes.NewClawbackVestingAccount(
+		bacc,
+		types.AccAddress([]byte("funder")),
+		origCoins,
+		now,
+		unvestedPeriods,
+		vestingPeriods,
+	)
+
+	fmt.Println(va.GetUnlockedOnly(now).String())
 }
