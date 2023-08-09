@@ -763,3 +763,18 @@ func (suite *AstraSdkTestSuite) TestGetLockTokenVesting() {
 
 	fmt.Println(va.GetUnlockedOnly(now).String())
 }
+
+func (suite *AstraSdkTestSuite) TestInitEthClient() {
+	ethClient := suite.Client.NewEthClient("https://rpc.astranaut.dev")
+	ctx := context.Background()
+	b, err := ethClient.GetBalance(ctx, "0xfB2aC4f9A55A42294D2b457573324252317c97CF")
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(b.String())
+
+	rs := big.NewInt(0).Div(b, big.NewInt(1e18))
+
+	fmt.Println(rs.String())
+}

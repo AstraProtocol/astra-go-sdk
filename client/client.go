@@ -6,6 +6,7 @@ import (
 	"github.com/AstraProtocol/astra-go-sdk/account"
 	"github.com/AstraProtocol/astra-go-sdk/bank"
 	"github.com/AstraProtocol/astra-go-sdk/config"
+	"github.com/AstraProtocol/astra-go-sdk/eth"
 	"github.com/AstraProtocol/astra-go-sdk/scan"
 	"github.com/AstraProtocol/astra-go-sdk/validator"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
@@ -13,6 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types"
 	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	distributionTypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/evmos/ethermint/encoding"
 	ethermintTypes "github.com/evmos/ethermint/types"
 	emvTypes "github.com/evmos/ethermint/x/evm/types"
@@ -110,4 +112,14 @@ func (c *Client) NewValidator() *validator.Validator {
 
 func (c *Client) NewVesting() vestingTypes.QueryClient {
 	return c.queryVestingClient
+}
+
+func (c *Client) NewEthClient(endpoint string) *eth.Client {
+	ethClientObject, err := ethclient.Dial(endpoint)
+	if err != nil {
+		fmt.Printf("ethclient.Dial endpoint = %v\n", endpoint)
+		panic(err)
+	}
+
+	return eth.NewClient(ethClientObject)
 }
