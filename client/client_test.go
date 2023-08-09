@@ -1,7 +1,9 @@
 package client
 
 import (
+	"bytes"
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/AstraProtocol/astra-go-sdk/bank"
@@ -13,6 +15,8 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	sdkvesting "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	ethCommon "github.com/ethereum/go-ethereum/common"
+	typeEth "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rlp"
 	vestingTypes "github.com/evmos/evmos/v6/x/vesting/types"
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
@@ -779,16 +783,40 @@ func (suite *AstraSdkTestSuite) TestInitEthClient() {
 	fmt.Println(rs.String())
 
 	accountClient := suite.Client.NewAccountClient()
-
 	wallet, err := accountClient.ImportAccount(
 		"",
 	)
 
-	tx, err := ethClient.Transfer(wallet.PrivateKeyToString(), "0x0450e95dd95EE78159C7244b40a8549F6B148d73", big.NewInt(5*1e18))
+	signedTx, err := ethClient.Transfer(wallet.PrivateKeyToString(), "0x0450e95dd95EE78159C7244b40a8549F6B148d73", big.NewInt(5*1e18))
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println(tx)
+	//encode
+	ts := typeEth.Transactions{signedTx}
+	buffer := new(bytes.Buffer)
+	ts.EncodeIndex(0, buffer)
+	rawTxBytes := buffer.Bytes()
+	rawTx := hex.EncodeToString(rawTxBytes)
 
+	fmt.Println(rawTx)
+	fmt.Println("tx", signedTx.Hash().String())
+
+	//decode
+	rawTxBytesDecode, err := hex.DecodeString(rawTx)
+	tx1 := new(typeEth.Transaction)
+	err = rlp.DecodeBytes(rawTxBytesDecode, &tx1)
+	if err != nil {
+		panic(err)
+	}
+
+	//broacast
+	err = ethClient.SendTransaction(context.Background(), tx1)
+	if err != nil {
+		panic(err)
+	}
+
+	//data
+	txStr, _ := tx1.MarshalJSON()
+	fmt.Println(string(txStr))
 }
