@@ -777,4 +777,18 @@ func (suite *AstraSdkTestSuite) TestInitEthClient() {
 	rs := big.NewInt(0).Div(b, big.NewInt(1e18))
 
 	fmt.Println(rs.String())
+
+	accountClient := suite.Client.NewAccountClient()
+
+	wallet, err := accountClient.ImportAccount(
+		"",
+	)
+
+	tx, err := ethClient.Transfer(wallet.PrivateKeyToString(), "0x0450e95dd95EE78159C7244b40a8549F6B148d73", big.NewInt(5*1e18))
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(tx)
+
 }

@@ -216,7 +216,7 @@ func (c *Client) Transfer(senderPrivKey, receiverAddress string, amount *big.Int
 		return "", errors.Wrap(err, "s.ethClient.PendingNonceAt")
 	}
 
-	gasLimit := uint64(200000)
+	gasLimit := uint64(21000)
 	gasPrice, err := c.SuggestGasPrice(context.Background())
 	if err != nil {
 		return "", errors.Wrap(err, "s.ethClient.SuggestGasPrice")
@@ -265,7 +265,7 @@ func (c *Client) TransferWithNoneNumber(
 		return "", errors.Wrap(err, "GasPrice is empty")
 	}
 
-	gasLimit := uint64(200000)
+	gasLimit := uint64(21000)
 
 	fee := new(big.Int)
 	fee.Mul(big.NewInt(int64(gasLimit)), gasPrice)
