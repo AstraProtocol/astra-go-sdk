@@ -3,6 +3,9 @@ package client
 import (
 	"bytes"
 	"context"
+	"crypto/elliptic"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -16,6 +19,8 @@ import (
 	sdkvesting "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	ethCommon "github.com/ethereum/go-ethereum/common"
 	typeEth "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto/ecies"
 	"github.com/ethereum/go-ethereum/rlp"
 	vestingTypes "github.com/evmos/evmos/v6/x/vesting/types"
 	"github.com/joho/godotenv"
@@ -819,4 +824,56 @@ func (suite *AstraSdkTestSuite) TestInitEthClient() {
 	//data
 	txStr, _ := tx1.MarshalJSON()
 	fmt.Println(string(txStr))
+}
+
+func (suite *AstraSdkTestSuite) TestEncryptDecryptViaPrivateKey() {
+	privateKey := "d7a370eb8429ea8db32973357c7012f2e2dd9453ea155ab2c3bc5c7d21e01ad0"
+	key, err := crypto.HexToECDSA(privateKey)
+	if err != nil {
+		panic(err)
+	}
+
+	pubkey := elliptic.MarshalCompressed(crypto.S256(), key.X, key.Y)
+
+	//encode to string
+	pubkeyStr := base64.StdEncoding.EncodeToString(pubkey)
+
+	//decode to byte
+	publicKeyByte, err := base64.StdEncoding.DecodeString(pubkeyStr)
+	if err != nil {
+		panic(err)
+	}
+
+	pkKey, err := crypto.DecompressPubkey(publicKeyByte)
+	if err != nil {
+		panic(err)
+	}
+
+	//import
+	pk1 := ecies.ImportECDSAPublic(pkKey)
+	pri := ecies.ImportECDSA(key)
+
+	msg := "encryption me!"
+	//encrypt
+	ct, err := ecies.Encrypt(rand.Reader, pk1, []byte(msg), nil, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	encryptData := base64.StdEncoding.EncodeToString(ct)
+	fmt.Println("encryption =", encryptData)
+
+	//decrypt
+	encryptDataByte, _ := base64.StdEncoding.DecodeString(encryptData)
+
+	decryptData, err := pri.Decrypt(encryptDataByte, nil, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	//result
+	fmt.Println("decryption =", string(decryptData))
+	if !bytes.Equal(decryptData, []byte(msg)) {
+		panic("ecies: plaintext doesn't match message")
+	}
 }
