@@ -3,7 +3,7 @@ package client
 import (
 	"bytes"
 	"context"
-	"crypto/elliptic"
+	"crypto/ecdsa"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
@@ -18,6 +18,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	sdkvesting "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	ethCommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	typeEth "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/crypto/ecies"
@@ -833,13 +834,20 @@ func (suite *AstraSdkTestSuite) TestEncryptDecryptViaPrivateKey() {
 		panic(err)
 	}
 
-	pubkey := elliptic.MarshalCompressed(crypto.S256(), key.X, key.Y)
+	publicKey := key.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		panic("PublicKey")
+	}
 
+	pubkey := crypto.CompressPubkey(publicKeyECDSA)
 	//encode to string
-	pubkeyStr := base64.StdEncoding.EncodeToString(pubkey)
+	pubkeyStr := hexutil.Encode(pubkey)
+
+	fmt.Println(pubkeyStr)
 
 	//decode to byte
-	publicKeyByte, err := base64.StdEncoding.DecodeString(pubkeyStr)
+	publicKeyByte, err := hexutil.Decode(pubkeyStr)
 	if err != nil {
 		panic(err)
 	}
