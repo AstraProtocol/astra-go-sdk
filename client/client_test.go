@@ -828,7 +828,7 @@ func (suite *AstraSdkTestSuite) TestInitEthClient() {
 }
 
 func (suite *AstraSdkTestSuite) TestEncryptDecryptViaPrivateKey() {
-	privateKey := "d7a370eb8429ea8db32973357c7012f2e2dd9453ea155ab2c3bc5c7d21e01ad0"
+	privateKey := "ad5fc8451de5ce123dfeb90e4f9624542d3ccb1f19960985c474aaf5fa9d4c1b"
 	key, err := crypto.HexToECDSA(privateKey)
 	if err != nil {
 		panic(err)
@@ -840,25 +840,23 @@ func (suite *AstraSdkTestSuite) TestEncryptDecryptViaPrivateKey() {
 		panic("PublicKey")
 	}
 
-	pubkey := crypto.CompressPubkey(publicKeyECDSA)
+	pubkey := crypto.FromECDSAPub(publicKeyECDSA)
 	//encode to string
 	pubkeyStr := hexutil.Encode(pubkey)
+	fmt.Println("pubkeyStr", pubkeyStr)
 
-	fmt.Println(pubkeyStr)
-
-	//decode to byte
-	publicKeyByte, err := hexutil.Decode(pubkeyStr)
-	if err != nil {
-		panic(err)
+	pubkeyByte, _ := hexutil.Decode(pubkeyStr)
+	pkKey, err1 := crypto.UnmarshalPubkey(pubkeyByte)
+	if err1 != nil {
+		panic(err1)
 	}
 
-	pkKey, err := crypto.DecompressPubkey(publicKeyByte)
-	if err != nil {
-		panic(err)
-	}
+	addr := crypto.PubkeyToAddress(*pkKey)
+	fmt.Println("addr", addr.String())
 
 	//import
 	pk1 := ecies.ImportECDSAPublic(pkKey)
+
 	pri := ecies.ImportECDSA(key)
 
 	msg := "encryption me!"
@@ -884,4 +882,15 @@ func (suite *AstraSdkTestSuite) TestEncryptDecryptViaPrivateKey() {
 	if !bytes.Equal(decryptData, []byte(msg)) {
 		panic("ecies: plaintext doesn't match message")
 	}
+
+	//LH3BcFMftRubgYmcfp8ijF72wa4wEA7ybwxuLbCFXy0
+	pk2 := common.GetEncryptionPublicKey(privateKey)
+	fmt.Println(pk2)
+
+	//encrypt
+	encrypted, err := common.Encrypt(pk2, []byte(msg), "x25519-xsalsa20-poly1305")
+	d, _ := json.Marshal(encrypted)
+
+	fmt.Println(string(d), "\n", base64.StdEncoding.EncodeToString(d))
+
 }
